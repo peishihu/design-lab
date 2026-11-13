@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Variant lab example</title>
+<!-- Double-click to open. Arrow keys move focus. The gear icon (bottom right) opens design controls. Hold B to see the baseline. L hides lab controls. All content is made up. -->
+<link rel="stylesheet" href="lab-chrome.css">
+<link rel="stylesheet" href="variant-lab.css">
+<style>
+  :root { --row-gap: 24px; --speed: 160ms; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: #111; color: #f1f1ef; font: 16px/1.4 system-ui, sans-serif; }
+  #page { --tile: 200px; }
+  #page.tight { --tile: 150px; } #page.roomy { --tile: 250px; }
+  .menu { display: flex; gap: 24px; align-items: center; padding: 20px 32px; background: #1c1c1c; }
+  .menu b { margin-right: auto; font-weight: 500; }
+  .menu.sticky { position: sticky; top: 0; z-index: 2; }
+  .menu span { opacity: .6; } .menu span.on { opacity: 1; text-decoration: underline; text-underline-offset: 6px; }
+  section { padding: 0 32px; margin-top: var(--row-gap); }
+  h2 { margin: 0 0 10px; font-size: 18px; font-weight: 400; opacity: .8; }
+  .row { display: flex; gap: 12px; }
+  .tile { flex: none; width: var(--tile); aspect-ratio: 16/9; background: #333; border-radius: 8px; padding: 10px; font-size: 14px; display: flex; align-items: flex-end; transition: transform var(--speed), outline-color var(--speed), box-shadow var(--speed); outline: 3px solid transparent; outline-offset: 2px; }
+  .ring .tile.f { outline-color: #fff; }
+  .scale .tile.f { transform: scale(1.08); outline-color: #fff; }
+  .glow .tile.f { box-shadow: 0 0 0 3px #fff, 0 0 28px rgba(255,255,255,.45); }
+  .tile { position: relative; }
+  .tile i { position: absolute; font-style: normal; font-size: 11px; }
+  .tile .badge { top: 8px; left: 8px; padding: 2px 6px; background: #f1f1ef; color: #111; border-radius: 4px; }
+  .tile .rating { top: 8px; right: 8px; padding: 1px 5px; border: 1px solid currentColor; border-radius: 3px; opacity: .8; }
+  .tile .prog { left: 0; right: 0; bottom: 0; height: 4px; background: linear-gradient(90deg, #f1f1ef var(--p), rgba(255,255,255,.2) var(--p)); border-radius: 0 0 8px 8px; }
+  .hint { position: fixed; left: 32px; bottom: 20px; font-size: 13px; opacity: .55; }
+</style></head>
+<body>
+<main id="page"></main>
+<p class="hint" data-lab>Arrow keys move focus. The gear icon (bottom right) opens design controls. Hold B to compare. L hides lab controls.</p>
+<script src="lab-chrome.js"></script>
+<script src="variant-lab.js"></script>
+<script>
+  // 1 · The content is fake and stays the same across every option, so the comparison is fair.
+  const ROWS = {
+    genre: [['Comedy', 7], ['Drama', 7], ['Documentary', 7], ['Kids', 7]],
+    mood: [['Something light', 7], ['Edge of your seat', 7], ['Learn something', 7], ['Watch together', 7]],
+    flat: [['All shows', 7], ['More shows', 7], ['Even more', 7], ['Last row', 7]],
+  };
+  let focus = { r: 0, c: 0 }, state;
+
+  // 2 · render rebuilds the page from the current choices.
+  function render(s) {
+    state = s;
+    document.documentElement.style.setProperty('--row-gap', s.gap + 'px');
+    document.documentElement.style.setProperty('--speed', s.speed + 'ms');
+    const page = document.getElementById('page');
+    page.className = `${s.density} ${s.focus}`;
+    const extras = s.extras ? s.extras.split(',') : [];
+    const extra = (r, c) => (extras.includes('badge') && c === 1 ? '<i class="badge">New</i>' : '') + (extras.includes('rating') ? '<i class="rating">12</i>' : '') +
+      (extras.includes('progress') && c < 2 ? `<i class="prog" style="--p:${30 + 25 * c}%"></i>` : '');
+    page.innerHTML = `<nav class="menu ${s.menu}"><b>Example TV</b><span class="on">Home</span><span>Guide</span><span>Search</span></nav>` +
+      ROWS[s.grouping].map(([name, n], r) => `<section>${s.titles === 'on' ? `<h2>${name}</h2>` : ''}<div class="row">${Array.from({ length: n }, (_, c) =>
+        `<div class="tile${focus.r === r && focus.c === c ? ' f' : ''}">${extra(r, c)}Title ${r + 1}.${c + 1}</div>`).join('')}</div></section>`).join('');
+  }
+
+  // 3 · The behavior being tested: press the arrow keys rather than imagine it.
+  addEventListener('keydown', e => {
+    const move = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[e.key];
+    if (!move || e.target.closest?.('input, .lab-panel')) return;
+    e.preventDefault();
+    const rows = ROWS[state.grouping];
+    focus.r = Math.max(0, Math.min(rows.length - 1, focus.r + move[0]));
+    focus.c = Math.max(0, Math.min(rows[focus.r][1] - 1, focus.c + move[1]));
+    render(state);
+    document.querySelector('.tile.f')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
+
+  // 4 · Each open decision gets the control that fits the question (see the design-lab skill):
+  //     choose one → dropdown · choose any → checkboxes (one column) · one on/off → switch · how much → number field + slider.
+  //     The panel is styled after the Figma UI3 properties panel; variant-lab/references/figma-ui3-components.md maps other controls.
+  //     A preset is a named bundle, named by its design theme or purpose, with a one-line description.
+  const lab = VariantLab.mount({
+    id: 'variant-lab-example',
+    title: 'Example lab',
+    about: {
+      question: 'Which setup makes it easiest to see where you are while browsing rows?',
+      round: 2,
+      revision: 3,          // raised on every control or preset change in round 2; back to 0 when round goes up
+      status: 'Active',     // Active | Chosen | Parked | Rejected
+      focus: 'Focus style and focus speed. Menu behavior was decided in round 1.',
+      history: [   // oldest first; the panel shows the newest on top
+        { round: 1, date: '2026-11-05', file: 'variant-lab-example_r1.0_sticky-menu_2026-11-05.json', tried: 'Scroll-away vs sticky menu, three densities, genre vs mood rows.', decided: 'Sticky menu. Keep normal density. Grouping still open.' },
+      ],
+    },
+    feedback: 'Example only. All content is made up.',
+    options: {
+      menu:     ['Top menu', { scroll: 'Scrolls away', sticky: 'Sticky' }],
+      grouping: ['Row grouping', { genre: 'By genre', mood: 'By mood', flat: 'No grouping' }],
+      density:  ['Density', { normal: 'Normal', tight: 'Tight', roomy: 'Roomy' }],
+      focus:    ['Focus style', { ring: 'Ring', scale: 'Ring and scale', glow: 'Glow' }],
+    },
+    checks:   { extras: ['Tile extras', { badge: 'New badge', progress: 'Progress bar', rating: 'Age rating' }] },
+    switches: { titles: 'Row titles' },
+    ranges: {
+      gap:   { label: 'Row spacing', min: 8, max: 64, step: 4, unit: 'px' },
+      speed: { label: 'Focus speed', min: 0, max: 400, step: 20, unit: 'ms' },
+    },
+    order: ['menu', 'grouping', 'density', 'titles', 'extras', 'focus', 'speed', 'gap'],
+    recommend: { focus: ['scale'] },
+    picked: { menu: 'sticky' },          // round 1 pick: not drawn, keeps it out of the archive
+    fresh: { focus: ['glow'] },          // round 2: new option
+    // the stock runtime puts control notes in row tooltips; CONFIRM adds a small "?" marker to the row
+    notes: { focus: 'Which one shows focus best from across the room?', gap: 'Today’s spacing is a guess from the screenshot (CONFIRM).' },
+    presets: {
+      'Today (baseline)':          { menu: 'scroll', grouping: 'genre', density: 'normal', titles: 'on', extras: '', focus: 'ring', gap: 24, speed: 160 },
+      'Persistent browsing':                { menu: 'sticky', grouping: 'genre', density: 'normal', titles: 'on', extras: '', focus: 'ring', gap: 24, speed: 160 },
+      'Guided browsing':        { menu: 'sticky', grouping: 'genre', density: 'normal', titles: 'on', extras: 'badge', focus: 'scale', gap: 24, speed: 220 },
+      'Quick browsing':           { menu: 'sticky', grouping: 'genre', density: 'normal', titles: 'on', extras: '', focus: 'glow', gap: 24, speed: 80 },
+      'Mood discovery':           { menu: 'sticky', grouping: 'mood', density: 'roomy', titles: 'on', extras: 'progress', focus: 'ring', gap: 40, speed: 160 },
+      'Sticky menu': { menu: 'sticky', grouping: 'genre', density: 'normal', titles: 'on', extras: '', focus: 'ring', gap: 24, speed: 160 },
+      'Scale focus, slower': { menu: 'sticky', grouping: 'genre', density: 'normal', titles: 'on', extras: 'badge', focus: 'scale', gap: 24, speed: 220 },
+      'Glow focus, fast': { menu: 'sticky', grouping: 'genre', density: 'normal', titles: 'on', extras: '', focus: 'glow', gap: 24, speed: 80 },
+      'Mood rows, roomy': { menu: 'sticky', grouping: 'mood', density: 'roomy', titles: 'on', extras: 'progress', focus: 'ring', gap: 40, speed: 160 },
+    },
+    presetInfo: {
+      'Today (baseline)':          { note: 'The live design. Menu scrolls away, ring focus.' },
+      'Persistent browsing':                { note: 'Menu stays at the top.', preferred: true, by: 'you', round: 1 },
+      'Guided browsing':        { note: 'Focused tile grows a little; 220 ms so the move is easy to follow.', by: 'ai', recommended: true, round: 2 },
+      'Quick browsing':           { note: 'Soft glow instead of a ring; 80 ms feels instant.', by: 'ai', round: 2 },
+      'Mood discovery':           { note: 'Rows grouped by mood with more space between them.', by: 'you', round: 2 },
+    },
+    // Preserve prior saved identities as archived aliases. New theme names take precedence.
+    archivePresets: ['Sticky menu', 'Scale focus, slower', 'Glow focus, fast', 'Mood rows, roomy'],
+    render,
+  });
+  // Reset, Load saved and Save selection are at the bottom of the LAB panel; the Note section's text is saved with the selection.
+  // lab.exportJSON() and lab.importJSON(text) do the same from code.
+</script>
+</body></html>

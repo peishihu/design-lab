@@ -1,0 +1,47 @@
+/* Lab chrome (variant-lab / design-lab skills).
+   One visual system for everything that is for the design lab only and never ships:
+   control docks, structure switches, option panels, stand-in tags, review notes.
+   It must never look like the product: black / white / grey + one electric blue, system-font labels, thin lines, a blue LAB tag (same family as the Figma-style panel).
+   Light by default; html[data-lab-theme="dark"] (the sun/moon icon in the panel header) switches to dark.
+   Mark every lab-only element with the attribute data-lab. Open the page with ?lab=0 to hide all of it (screenshots), or press L (a small LAB tab stays as the way back)
+   and see exactly what would ship. */
+
+:root {
+  --lab-blue: #3557ff;
+  --lab-bg: #d6d6d3;          /* grey paper */
+  --lab-surface: #fbfbfa;     /* white controls */
+  --lab-ink: #0b0b0b;
+  --lab-line: rgba(0, 0, 0, .26);
+  --lab-font: system-ui, -apple-system, "Segoe UI", sans-serif;   
+}
+html[data-lab-theme="dark"] { --lab-bg: #0c0c0c; --lab-surface: #121212; --lab-ink: #f2f2f0; --lab-line: rgba(255, 255, 255, .4); }
+
+/* hidden when the reader asks to see the shipping page */
+html.lab-off [data-lab] { display: none !important; }
+
+/* ---------- the dock: one fixed home for lab controls (only for pages without an Options panel) ---------- */
+.lab-dock { position: fixed; left: 12px; bottom: 12px; z-index: 2147482999; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: calc(100vw - 24px); box-sizing: border-box;
+  padding: 4px; background: var(--lab-bg); color: var(--lab-ink); border: 1px solid var(--lab-ink); border-radius: 0;
+  font: 500 11px/1.2 var(--lab-font); letter-spacing: .06em; text-transform: uppercase; box-shadow: 0 6px 20px rgba(0, 0, 0, .3); cursor: auto; }
+.lab-dock * { cursor: auto; }
+.lab-dock button, .lab-dock a { all: unset; cursor: pointer !important; padding: 6px 8px; border: 1px solid var(--lab-line); background: var(--lab-surface); color: var(--lab-ink); white-space: nowrap; }
+.lab-dock button:hover, .lab-dock a:hover { border-color: var(--lab-blue); }
+.lab-dock button:focus-visible, .lab-dock a:focus-visible { outline: 2px solid var(--lab-blue); outline-offset: 1px; }
+.lab-dock button[aria-pressed="true"] { background: var(--lab-ink); color: var(--lab-surface); border-color: var(--lab-ink); }
+.lab-dock .lab-sep { width: 1px; align-self: stretch; background: var(--lab-line); }
+.lab-dock kbd { font: inherit; padding: 0 4px; border: 1px solid var(--lab-line); opacity: .8; }
+
+/* the LAB tag: on the dock and on any lab note */
+.lab-tag { display: inline-flex; align-items: center; padding: 4px 6px; color: #fff; background: var(--lab-blue); font: 600 9px/1 var(--lab-font); letter-spacing: .14em; }
+
+/* ---------- inline notes: stand-in images, CONFIRM items, review remarks ---------- */
+.lab-note { display: inline-flex; align-items: center; gap: 6px; padding: 3px 6px 3px 3px; background: var(--lab-surface); color: var(--lab-ink); border: 1px solid var(--lab-ink);
+  font: 500 10px/1.2 var(--lab-font); letter-spacing: .06em; text-transform: uppercase; pointer-events: none; }
+.lab-note::before { content: "LAB"; padding: 2px 4px; color: #fff; font-weight: 600; letter-spacing: .14em; background: var(--lab-blue); }
+
+/* a region under review: blue outline, no layout change */
+.lab-outline { outline: 1px dashed var(--lab-blue); outline-offset: 4px; }
+
+@media (max-width: 700px) { .lab-dock { left: 8px; bottom: 8px; } .lab-dock .lab-hide-sm, .lab-dock a, .lab-dock .lab-sep { display: none; } }   /* phones: LAB tag and buttons only, links stay on desktop */
+@media print { [data-lab] { display: none !important; } }
+.lab-dock[hidden] { display: none !important; }

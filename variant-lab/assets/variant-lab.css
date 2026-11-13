@@ -1,0 +1,255 @@
+/* variant-lab panel (from the variant-lab skill, v1.2.0). Review chrome only; never ship it.
+   Look: the Figma UI3 properties panel (values in variant-lab/references/figma-ui3-components.md). system font 11 px,
+   24 px controls, 5 px radius, 13 px panel radius, collapsible sections split by full-width lines, neutral grey and white states.
+   Blue is used only for the LAB button, the slider fill, focus rings and the two marks (star = AI pick, dot = new).
+   Two modes: day and night, switched with the sun/moon button (html[data-lab-theme], remembered in localStorage 'lab-theme').
+   Dropdown menus follow the mode: white in day, #1e1e1e in night; their radius is the same 5 px as the field they open from.
+   No text in the panel is smaller than 11px. Works without lab-chrome.css; load it first when you use both. */
+
+
+
+
+/* ---------- tokens: day (default) ---------- */
+:root {
+  --b-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --b-blue: #3557ff; --b-blue-text: #2846e0; --b-red: #b3261e;
+  --b-bg: #ffffff; --b-surface: #ffffff;           /* panel */
+  --b-bg2: #f5f5f5;                                /* number fields, note, chips */
+  --b-hover: #f5f5f5;
+  --b-ink: #1e1e1e; --b-muted: #737373; --b-faint: #b3b3b3;   /* text, secondary text, placeholders and empty checkboxes */
+  --b-line: #e6e6e6; --b-line-strong: #b3b3b3;     /* dividers and field outlines, outline on hover */
+  --b-track: #e6e6e6; --b-switch-off: #d9d9d9;
+  --b-menu: #ffffff; --b-menu-ink: #1e1e1e; --b-menu-muted: #737373; --b-menu-hover: #f5f5f5; --b-menu-line: #e6e6e6; --b-menu-ai: #2846e0;
+  --b-menu-shadow: 0 0 .5px rgba(0,0,0,.12), 0 10px 16px rgba(0,0,0,.12), 0 2px 5px rgba(0,0,0,.15);
+  --b-shadow: 0 0 .5px rgba(0,0,0,.12), 0 10px 16px rgba(0,0,0,.12), 0 2px 5px rgba(0,0,0,.15);
+  --lab-dock-w: 0px;
+}
+/* ---------- tokens: night ---------- */
+html[data-lab-theme="dark"] {
+  --b-blue-text: #9fb3ff; --b-red: #ff8a78;
+  --b-bg: #2c2c2c; --b-surface: #2c2c2c;
+  --b-bg2: #383838; --b-hover: #383838;
+  --b-ink: #ebebeb; --b-muted: #a8a8a8; --b-faint: #707070;
+  --b-line: #444444; --b-line-strong: #6b6b6b;
+  --b-track: #4a4a4a; --b-switch-off: #555555;
+  --b-menu: #1e1e1e; --b-menu-ink: #ffffff; --b-menu-muted: #8f8f8f; --b-menu-hover: #333333; --b-menu-line: #383838; --b-menu-ai: #9fb3ff;
+  --b-menu-shadow: 0 0 .5px rgba(0,0,0,.3), 0 10px 16px rgba(0,0,0,.35), 0 2px 5px rgba(0,0,0,.35), inset 0 .5px 0 rgba(255,255,255,.08);
+  --b-shadow: 0 10px 16px rgba(0,0,0,.35), 0 2px 5px rgba(0,0,0,.35), inset 0 .5px 0 rgba(255,255,255,.08);
+}
+
+/* ---------- scrollbars: a thin indicator only (no track, no arrows) in every scrolling part of the panel ----------
+   The panel body, the About drawer and the dropdown menus. 3 px rounded thumb, faint at rest, darker on hover.
+   Chromium/Safari use ::-webkit-scrollbar (the page's scrollbar-color is reset to auto, which would switch it off);
+   Firefox gets the standard thin scrollbar in the same colours. The page's own scrollbars are the design's; left alone. */
+:root { --b-scroll: rgba(0,0,0,.2); --b-scroll-hover: rgba(0,0,0,.42); }
+html[data-lab-theme="dark"] { --b-scroll: rgba(255,255,255,.16); --b-scroll-hover: rgba(255,255,255,.34); }
+.lab-panel, .lab-panel * { scrollbar-width: auto; scrollbar-color: auto; }
+.lab-panel ::-webkit-scrollbar { width: 9px; height: 9px; background: transparent; }
+.lab-panel ::-webkit-scrollbar-track, .lab-panel ::-webkit-scrollbar-corner { background: transparent; }
+.lab-panel ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+.lab-panel ::-webkit-scrollbar-thumb { background: var(--b-scroll); background-clip: padding-box; border: 3px solid transparent; border-radius: 9px; min-height: 28px; }
+.lab-panel ::-webkit-scrollbar-thumb:hover, .lab-panel ::-webkit-scrollbar-thumb:active { background-color: var(--b-scroll-hover); }
+@supports not selector(::-webkit-scrollbar) { .lab-panel, .lab-panel * { scrollbar-width: thin; scrollbar-color: var(--b-scroll) transparent; } }
+
+/* ---------- base and resets: page-wide styles must not leak in ---------- */
+.lab-fab, .lab-panel, .lab-panel *, .lab-panel *::before, .lab-panel *::after { box-sizing: border-box; }
+.lab-fab, .lab-panel, .lab-panel * { cursor: auto !important; }
+.lab-fab, .lab-panel button, .lab-panel label.chk, .lab-panel input.rng { cursor: default !important; }
+.lab-panel input.num, .lab-panel textarea { cursor: text !important; }
+.lab-panel p, .lab-panel b, .lab-panel ol, .lab-panel li { margin-left: 0; margin-right: 0; }
+.lab-panel i { font-style: normal; }
+.lab-panel svg { display: block; flex: none; fill: none; stroke: currentColor; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+.lab-panel kbd { font: 550 11px/16px var(--b-font); padding: 0 4px; border-radius: 3px; background: var(--b-bg2); color: inherit; }
+
+/* ---------- the floating button: a 36 px blue circle with a white gear, no word ---------- */
+.lab-fab { all: unset; box-sizing: border-box; position: fixed; z-index: 2147483001; right: 20px; bottom: 20px; display: grid; place-items: center;
+  width: 36px; height: 36px; border-radius: 50%; background: var(--b-blue); color: #fff; box-shadow: var(--b-shadow); }
+.lab-fab svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; transition: transform .2s; }
+.lab-fab:hover { background: #2a4cf0; }
+.lab-fab.on svg { transform: rotate(22.5deg); }
+@media (prefers-reduced-motion: reduce) { .lab-fab svg { transition: none; } }
+html.lab-docked:not(.lab-panel-closed) .lab-fab { display: none !important; }
+
+/* ---------- panel ---------- */
+.lab-panel { position: fixed; z-index: 2147483000; right: 20px; bottom: 64px; width: 300px; max-height: calc(100vh - 88px); display: flex; flex-direction: column; margin: 0; overflow: hidden;
+  background: var(--b-bg); border: 0; border-radius: 13px; box-shadow: var(--b-shadow); color: var(--b-ink);
+  font: 450 11px/16px var(--b-font); letter-spacing: .055px; text-align: left; text-transform: none; -webkit-font-smoothing: antialiased; }
+.lab-panel[hidden] { display: none; }
+
+/* header: title, then icon buttons (About, day/night, close) */
+.lab-panel .lab-head { flex: none; display: flex; align-items: center; gap: 2px; height: 40px; padding: 0 8px 0 16px; border-bottom: 1px solid var(--b-line); }
+.lab-panel .lab-head .ttl { display: block; flex: 1 1 auto; min-width: 0; margin-right: 4px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lab-panel .lab-head .ico { all: unset; flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; color: var(--b-muted); }
+.lab-panel .lab-head .ico:hover, .lab-panel .lab-head .ico.info[aria-expanded="true"] { background: var(--b-hover); color: var(--b-ink); }
+
+/* About drawer: directly under the header, pushes the controls down, scrolls on its own */
+.lab-panel .about { flex: none; max-height: 50vh; overflow: auto; overscroll-behavior: contain; padding: 0 16px 12px; border-bottom: 1px solid var(--b-line); }
+.lab-panel .about[hidden] { display: none; }
+.lab-panel .about-st { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-weight: 550; }
+.lab-panel .about-st.off { color: var(--b-muted); }
+.lab-panel .dot { display: inline-block; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.lab-panel .info-k { margin: 12px 0 2px; color: var(--b-muted); }
+.lab-panel .info-v { margin: 0; }
+.lab-panel .hist { margin: 4px 0 0; padding: 0; list-style: none; }
+.lab-panel .hist li { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--b-line); }
+.lab-panel .hist li:first-child { border-top: 0; }
+.lab-panel .hist b { font-weight: 550; }
+.lab-panel .hist .file { color: var(--b-muted); word-break: break-all; }
+
+.lab-panel .scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+/* hold-to-compare notice: stays at the top of the scroll area */
+.lab-panel .cmp-bar { position: sticky; top: 0; z-index: 6; margin: 0; padding: 8px 16px; background: var(--b-bg2); color: var(--b-blue-text); border-bottom: 1px solid var(--b-line); }
+.lab-panel .cmp-bar[hidden] { display: none; }
+
+/* ---------- sections: 40 px header (chevron + name, extras on the right), content below, a full-width line between ---------- */
+.lab-panel .sec { border-bottom: 1px solid var(--b-line); }
+.lab-panel .lbl { display: flex; align-items: center; gap: 4px; height: 40px; padding: 4px 8px 4px 6px; }
+.lab-panel button.tog { all: unset; box-sizing: border-box; flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 2px; height: 32px; padding-right: 4px; border-radius: 5px; color: var(--b-ink); font-weight: 550; }
+.lab-panel button.tog > span:not(.sec-chev) { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lab-panel .sec.shut button.tog { color: var(--b-muted); font-weight: 450; }
+.lab-panel .sec.shut button.tog:hover { color: var(--b-ink); }
+.lab-panel .sec-chev { flex: none; width: 16px; height: 16px; display: grid; place-items: center; color: var(--b-muted); }
+.lab-panel .sec-chev svg { transition: transform .12s; }
+.lab-panel .sec.shut .sec-chev svg { transform: rotate(-90deg); }
+.lab-panel .sec-sp { flex: none; width: 16px; }
+.lab-panel .sc { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 0 16px 12px; }
+.lab-panel .sc[hidden] { display: none; }
+.lab-panel .lbl .c { flex: none; min-width: 16px; height: 16px; padding: 0 4px; margin-right: 4px; display: inline-grid; place-items: center; border-radius: 4px; background: var(--b-bg2); color: var(--b-muted); }
+.lab-panel .sub-l { margin: 0; color: var(--b-muted); }
+/* groups (since 1.3): one section holds several controls, e.g. a type role. Members are always open, without their own chevron or divider. */
+.lab-panel .grp { display: grid; grid-template-columns: minmax(0, 1fr); margin: -4px -16px -4px; }
+.lab-panel .sec.in-grp { border-bottom: 0; }
+.lab-panel .sec.in-grp > .lbl { height: 28px; padding-left: 16px; }
+.lab-panel .sec.in-grp > .lbl button.tog { pointer-events: none; height: 24px; color: var(--b-muted); font-weight: 450; }
+.lab-panel .sec.in-grp > .lbl .sec-chev, .lab-panel .sec.in-grp > .lbl .sec-sp { display: none; }
+.lab-panel .sec.in-grp > .sc { padding-bottom: 8px; }
+.lab-panel .sub-l + .chks { margin-top: -4px; }
+/* CONFIRM marker: a small "?" after the row name; the note itself is its tooltip */
+.lab-panel .cfm { display: inline-grid; place-items: center; flex: none; width: 14px; height: 14px; margin-left: 2px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--b-line-strong); color: var(--b-muted);
+  font: 550 11px/1 var(--b-font); cursor: help !important; }
+.lab-panel .lbl span[title] { cursor: help !important; }
+
+/* hold to compare: a small button at the right of the Preset header (the compare key works too) */
+.lab-panel button.hold { all: unset; box-sizing: border-box; flex: none; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 6px; border-radius: 5px; color: var(--b-muted);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.lab-panel button.hold:hover { background: var(--b-hover); color: var(--b-ink); }
+.lab-panel button.hold[aria-pressed="true"] { background: var(--b-bg2); color: var(--b-ink); }
+
+/* ---------- marks: icons only. Star = AI pick, dot = new this round. They sit right after the text ---------- */
+.lab-panel .ai, .lab-panel .new { flex: none; display: inline-flex; align-items: center; }
+.lab-panel .ai svg { fill: var(--b-blue-text); stroke: none; }
+.lab-panel .new { width: 6px; height: 6px; margin: 0 1px; border-radius: 50%; background: var(--b-blue); }
+
+/* ---------- dropdown (preset and every single choice): closed = 24 px field with the value; open = a menu under it ---------- */
+.lab-panel .pd { position: relative; }
+.lab-panel .pd-btn { all: unset; box-sizing: border-box; position: relative; display: flex; align-items: center; width: 100%; height: 24px; padding: 0 24px 0 8px; border-radius: 5px;
+  background: var(--b-bg); box-shadow: inset 0 0 0 1px var(--b-line); color: var(--b-ink); white-space: nowrap; }
+.lab-panel .pd-btn:hover { box-shadow: inset 0 0 0 1px var(--b-line-strong); }
+.lab-panel .pd-btn[aria-expanded="true"] { box-shadow: inset 0 0 0 1px var(--b-ink); }
+.lab-panel .pd-cur, .lab-panel .pd-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.lab-panel .pd-cur > span:first-child, .lab-panel .pd-name > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lab-panel .pd-chev { position: absolute; right: 4px; top: 4px; color: var(--b-muted); }
+.lab-panel .pd-list { position: absolute; z-index: 5; left: 0; right: 0; top: 28px; isolation: isolate; max-height: 320px; overflow: auto; overscroll-behavior: contain;
+  padding: 4px 0; border-radius: 5px; background: var(--b-menu); color: var(--b-menu-ink); box-shadow: var(--b-menu-shadow); }
+.lab-panel .pd-list[hidden] { display: none; }
+.lab-panel .pd-list.up { top: auto; bottom: 28px; }   /* opened above the field when there is more room there (set in placeList) */
+.lab-panel .pd-grp + .pd-grp { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--b-menu-line); }
+.lab-panel .pd-g { margin: 0; padding: 4px 16px 4px 28px; color: var(--b-menu-muted); }
+.lab-panel .pd-item { all: unset; box-sizing: border-box; position: relative; display: grid; align-content: center; width: 100%; min-height: 24px; padding: 4px 16px 4px 28px; color: var(--b-menu-ink); white-space: nowrap; }
+.lab-panel .pd-item::before { content: ""; position: absolute; z-index: -1; inset: 0 4px; border-radius: 3px; }
+.lab-panel .pd-item:hover::before, .lab-panel .pd-item:focus-visible::before { background: var(--b-menu-hover); }
+.lab-panel .pd-tk { position: absolute; left: 8px; top: 4px; visibility: hidden; }
+.lab-panel .pd-item[aria-pressed="true"] .pd-tk { visibility: visible; }
+.lab-panel .pd-desc { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--b-menu-muted); }
+.lab-panel .pd-list .ai svg { fill: var(--b-menu-ai); }
+
+/* ---------- checkboxes (choose any number): one column, one line each, long text ends in "…" (full text in the tooltip) ---------- */
+.lab-panel .chks { display: grid; grid-template-columns: minmax(0, 1fr); margin: -4px 0; }
+.lab-panel label.chk { position: relative; display: flex; align-items: center; gap: 8px; height: 24px; min-width: 0; white-space: nowrap; color: var(--b-ink); }
+.lab-panel label.chk input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.lab-panel label.chk .box { flex: none; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--b-faint); color: var(--b-bg); }
+.lab-panel label.chk .box svg { visibility: hidden; stroke-width: 2; }
+.lab-panel label.chk input:checked + .box { background: var(--b-ink); box-shadow: none; }
+.lab-panel label.chk input:checked + .box svg { visibility: visible; }
+.lab-panel label.chk:hover input:not(:checked) + .box { box-shadow: inset 0 0 0 1px var(--b-muted); }
+.lab-panel label.chk .box + span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- switch (one on/off): a small neutral toggle at the right of its row ---------- */
+.lab-panel .lbl.sw-row { gap: 2px; }
+.lab-panel .sw-row > span[id] { flex: 0 1 auto; min-width: 0; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lab-panel button.switch { all: unset; box-sizing: border-box; flex: none; margin-left: auto; margin-right: 8px; display: inline-flex; align-items: center; height: 24px; }
+.lab-panel button.switch .track { position: relative; width: 26px; height: 14px; border-radius: 7px; background: var(--b-switch-off); transition: background .12s; }
+.lab-panel button.switch .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .12s; }
+.lab-panel button.switch[aria-checked="true"] .track { background: var(--b-ink); }
+.lab-panel button.switch[aria-checked="true"] .track::after { left: 14px; background: var(--b-bg); }
+
+/* ---------- slider + number field on one line: the field is the exact value, the slider is for quick moves ---------- */
+.lab-panel .r2 { display: flex; align-items: center; gap: 12px; }
+.lab-panel .num-wrap { flex: none; display: flex; align-items: center; gap: 4px; width: 72px; height: 24px; padding: 0 8px; border-radius: 5px; background: var(--b-bg2); }
+.lab-panel .num-wrap:hover { box-shadow: inset 0 0 0 1px var(--b-line-strong); }
+.lab-panel .num-wrap:focus-within { box-shadow: inset 0 0 0 1px var(--b-ink); }
+.lab-panel input.num { all: unset; box-sizing: border-box; flex: 1 1 auto; min-width: 0; width: 100%; height: 24px; color: var(--b-ink); font: 450 11px/24px var(--b-font); font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.lab-panel input.num::-webkit-inner-spin-button, .lab-panel input.num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.lab-panel input.num[aria-invalid="true"] { color: var(--b-red); }
+.lab-panel .num-wrap:has(input[aria-invalid="true"]) { box-shadow: inset 0 0 0 1px var(--b-red); }
+.lab-panel .unit { flex: none; color: var(--b-muted); }
+.lab-panel .unit:empty { display: none; }
+/* min | bar | max on one line, so the two numbers read as the ends of the bar */
+.lab-panel .rwrap { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; height: 24px; }
+.lab-panel .rwrap .end { flex: none; min-width: 12px; color: var(--b-muted); text-align: center; font-variant-numeric: tabular-nums; }
+.lab-panel input.rng { all: revert; -webkit-appearance: none; appearance: none; display: block; flex: 1 1 auto; min-width: 0; width: auto; height: 16px; margin: 0; padding: 0; background: transparent; }
+.lab-panel input.rng::-webkit-slider-runnable-track { height: 2px; border-radius: 2px; background: linear-gradient(to right, var(--b-blue) var(--p, 0%), var(--b-track) var(--p, 0%)); }
+.lab-panel input.rng::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: -5px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 1px 3px rgba(0,0,0,.3); }
+.lab-panel input.rng::-moz-range-track { height: 2px; border-radius: 2px; background: var(--b-track); }
+.lab-panel input.rng::-moz-range-progress { height: 2px; border-radius: 2px; background: var(--b-blue); }
+.lab-panel input.rng::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 1px 3px rgba(0,0,0,.3); }
+.lab-panel .err { margin: 0; color: var(--b-red); }
+.lab-panel .err[hidden] { display: none; }
+
+/* ---------- note: a collapsible section; the text goes into Save selection ---------- */
+.lab-panel textarea { all: unset; box-sizing: border-box; display: block; width: 100%; min-height: 56px; padding: 4px 8px; border-radius: 5px; background: var(--b-bg2); color: var(--b-ink);
+  font: 450 11px/16px var(--b-font); white-space: pre-wrap; resize: vertical; }
+.lab-panel textarea::placeholder { color: var(--b-muted); opacity: 1; }
+.lab-panel textarea:hover { box-shadow: inset 0 0 0 1px var(--b-line-strong); }
+.lab-panel textarea:focus { box-shadow: inset 0 0 0 1px var(--b-ink); }
+
+/* hold to compare with the panel closed: a tag above the LAB button */
+.lab-cmp-tag { position: fixed; z-index: 2147483001; right: 20px; bottom: 64px; margin: 0; padding: 4px 8px; border-radius: 5px; background: var(--b-menu); color: var(--b-blue-text);
+  box-shadow: var(--b-menu-shadow); font: 450 11px/16px var(--b-font); letter-spacing: .055px; pointer-events: none; }
+html[data-lab-theme="dark"] .lab-cmp-tag { color: var(--b-menu-ai); }
+.lab-cmp-tag[hidden] { display: none; }
+
+/* ---------- footer: Reset · Load saved · Save selection. No blue; Save selection is a little bolder ---------- */
+.lab-panel .lab-foot { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px 8px 8px; }
+.lab-panel .lab-foot .sp { flex: 1; }
+.lab-panel .lab-foot button { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 5px; color: var(--b-ink); box-shadow: inset 0 0 0 1px var(--b-line); white-space: nowrap; }
+.lab-panel .lab-foot button.tx { color: var(--b-muted); box-shadow: none; }
+.lab-panel .lab-foot button.strong { font-weight: 550; }
+.lab-panel .lab-foot button:hover { background: var(--b-hover); color: var(--b-ink); }
+.lab-panel .lab-export-status { flex: none; margin: 0; padding: 0 16px 10px; color: var(--b-muted); overflow-wrap: anywhere; }
+.lab-panel .lab-export-status:empty { display: none; }
+
+.lab-fab:focus-visible, .lab-panel button:focus-visible, .lab-panel input.rng:focus-visible, .lab-panel input.num:focus-visible, .lab-panel textarea:focus-visible,
+.lab-panel label.chk input:focus-visible + .box { outline: 2px solid var(--b-blue); outline-offset: 1px; }
+.lab-panel input.num:focus-visible { outline: 0; }
+.lab-panel .num-wrap:has(input:focus-visible) { outline: 2px solid var(--b-blue); outline-offset: 1px; }
+.lab-panel .pd-item:focus-visible { outline: 0; }
+
+/* docking was removed in 1.1.1 (it changed the page's width and ratio); these rules keep an old html.lab-docked class harmless */
+.lab-panel.docked { top: auto; }
+@media (max-width: 700px) { .lab-panel { left: 10px; right: 10px; width: auto; bottom: 60px; max-height: 60vh; } .lab-fab { right: 12px; bottom: 12px; } }
+@media (prefers-reduced-motion: reduce) { .lab-panel .sec-chev svg, .lab-panel button.switch .track, .lab-panel button.switch .track::after { transition: none; } }
+
+/* search field at the top of a long menu (since 1.3) */
+.lab-panel .pd-q { position: sticky; top: 0; z-index: 1; box-sizing: border-box; width: calc(100% - 8px); height: 24px; margin: 4px; padding: 0 8px; border: 1px solid var(--b-line-strong); border-radius: 5px;
+  background: var(--b-bg); color: var(--b-ink); font: inherit; outline: none; }
+.lab-panel .pd-q:focus { border-color: var(--b-blue, #3557ff); }
+.lab-panel .pd-item[hidden], .lab-panel .pd-grp[hidden] { display: none; }
+
+/* Per-control restore uses its own mark; it is not a recommendation or a new-option signal. */
+.lab-panel .restore-one { all: unset; flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; color: var(--b-muted); cursor: default; }
+.lab-panel .restore-one[hidden] { display: none; }
+.lab-panel .restore-one:hover { background: var(--b-hover); color: var(--b-ink); }
+.lab-panel .restore-one svg { width: 14px; height: 14px; }
+.lab-panel .restore-one:focus-visible { outline: 2px solid var(--b-blue-text); outline-offset: 1px; }
+.lab-panel .ico.undo:disabled { opacity: .35; cursor: default; }

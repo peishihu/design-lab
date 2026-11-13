@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab self-test</title>
+<!-- Double-click to run. Checks the LAB panel in this browser, then runs the unit tests of variant-lab.js.
+     Dark mode: open the same file with ?theme=dark. Nothing here needs Node or a server; the unit tests need the files
+     read by the browser (a local server, or Chrome started with --allow-file-access-from-files). -->
+<link rel="stylesheet" href="lab-chrome.css">
+<link rel="stylesheet" href="variant-lab.css">
+<style>
+  body { margin: 0; background: var(--b-bg); color: var(--b-ink); font: 400 14px/1.5 var(--b-font); }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 20px 48px; }
+  h1 { margin: 0 0 6px; font: 600 20px/1.2 var(--b-font); }
+  #summary { margin: 0 0 16px; font: 500 13px/1.4 var(--b-font); }
+  #out { margin: 0; font: 400 12.5px/1.6 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; }
+  .bad { color: var(--b-red); }
+  #page { display: none; }
+</style></head>
+<body>
+<main><h1>Lab self-test</h1><p id="summary">Running…</p><pre id="out"></pre></main>
+<div id="page"></div>
+<script src="lab-chrome.js"></script>
+<script src="variant-lab.js"></script>
+<script>
+(async () => {
+  const params = new URLSearchParams(location.search), theme = params.get('theme') === 'dark' ? 'dark' : 'light';
+  const out = document.getElementById('out'), summary = document.getElementById('summary');
+  const results = [];
+  const show = () => {
+    const passed = results.filter(r => r[0]).length;
+    summary.textContent = `${passed} of ${results.length} checks passed (${theme} mode)` + (passed === results.length ? '' : '. Failing checks are in red.');
+    document.body.dataset.result = passed === results.length ? 'pass' : 'fail';
+    out.innerHTML = results.map(([ok, name, detail]) => `<span class="${ok ? '' : 'bad'}">${ok ? '✓' : '✗'} ${name}${ok || !detail ? '' : ' — ' + detail.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</span>`).join('\n');
+  };
+  const expect = (cond, msg) => { if (!cond) throw new Error(msg || 'condition false'); };
+  const tick = () => new Promise(r => setTimeout(r, 0));
+  const frame = () => new Promise(r => setTimeout(r, 30));   // not requestAnimationFrame: it can stall in a background or headless tab
+  const key = (el, k, extra = {}) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...extra }));
+  const click = el => el.click();
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const luminance = hex => { const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const contrast = (a, b) => { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  const token = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const CHECK = (name, fn) => ({ name, fn });
+
+  // ---- errors and page keys (the page must receive no key while the panel is open) ----
+  const errors = [];
+  const origError = console.error; console.error = (...a) => { errors.push(a.map(String).join(' ')); origError.apply(console, a); };
+  addEventListener('error', e => errors.push(String(e.message)));
+  let pageKeys = 0;
+  document.addEventListener('keydown', () => pageKeys++);
+
+  // ---- a clean start: remembered panel, theme, docking, About and note for this lab ----
+  ['lab-theme', 'lab-dock', 'lab-about:variant-lab-example', 'lab-note:variant-lab-example', 'lab-sec:variant-lab-example'].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+  history.replaceState(null, '', location.pathname + location.search);
+  const lastRender = { current: null };
+  // The config of example.html, read from that file, so the self-test always checks what ships.
+  let config;
+  try {
+    const html = await (await fetch('example.html')).text();
+    const src = html.slice(html.indexOf('VariantLab.mount(') + 'VariantLab.mount('.length, html.lastIndexOf('render,'));
+    config = new Function(`return (${src} render: null, })`)();
+  } catch (e) {
+    results.push([false, 'could not read the example config from example.html (open the folder through a local server, or start Chrome with --allow-file-access-from-files)', e.message]);
+    show(); return;
+  }
+  const lab = VariantLab.mount({ ...config, render: s => { lastRender.current = { ...s }; $('#page').dataset.focus = s.focus; }, theme });
+  lab.theme(theme);
+  lab.open(true);
+  await frame();
+
+  const panel = () => $('.lab-panel'), fab = () => $('.lab-fab'), listEl = () => $('#lab-pd-list'), about = () => $('#lab-about');
+  const pdBtn = () => $('.pd-btn'), numInput = k => $(`[data-n="${k}"]`), rangeInput = k => $(`[data-r="${k}"]`);
+  const closePanel = () => { if (!panel().hidden) key(document.activeElement || document.body, 'Escape'); };
+
+  const checks = [
+    CHECK('the round gear button opens and closes the panel, with an aria-label and no word', () => {
+      lab.open(false); expect(panel().hidden, 'panel should start closed');
+      expect(fab().textContent.trim() === '' && fab().querySelector('svg') && fab().getAttribute('aria-label') === 'Open lab options', 'button text, icon or aria-label');
+      const fr = fab().getBoundingClientRect(), fs = getComputedStyle(fab());
+      expect(Math.abs(fr.width - fr.height) < 1 && parseFloat(fs.borderTopLeftRadius) >= fr.width / 2 - 1, 'button is not round');
+      expect(fs.backgroundColor === 'rgb(53, 87, 255)', 'button is not blue: ' + fs.backgroundColor);
+      click(fab()); expect(!panel().hidden && fab().getAttribute('aria-label') === 'Close lab options', 'click did not open');
+      click(fab()); expect(panel().hidden, 'second click did not close');
+      click(fab());
+    }),
+    CHECK('header has no LAB tag and shows the title in an ellipsis span', () => {
+      const ttl = $('.lab-head .ttl');
+      expect(ttl, 'no .ttl'); expect(ttl.title === config.title, 'title attribute missing');
+      expect(getComputedStyle(ttl).textOverflow === 'ellipsis' && getComputedStyle(ttl).overflow === 'hidden', 'no ellipsis');
+      expect(getComputedStyle($('.lab-head'), '::before').content.replace(/"/g, '') === '' || getComputedStyle($('.lab-head'), '::before').content === 'none', 'header has a tag');
+      expect(getComputedStyle(ttl, '::before').content === 'none' || getComputedStyle(ttl, '::before').content === 'normal', 'title has a tag');
+    }),
+    CHECK('header order is title, info, Undo, theme, close (no pin button)', () => {
+      const order = $$('.lab-head > *').map(e => e.classList.contains('ttl') ? 'ttl' : e.classList.contains('info') ? 'info' : e.classList.contains('undo') ? 'undo' : e.classList.contains('mode') ? 'mode' : e.classList.contains('dock') ? 'dock' : 'x');
+      expect(order.join(' ') === 'ttl info undo mode x', order.join(' '));
+    }),
+    CHECK('About icon opens the drawer; Esc closes the drawer before the panel', () => {
+      expect(about().hidden, 'drawer should start closed');
+      click($('.ico.info')); expect(!about().hidden && $('.ico.info').getAttribute('aria-expanded') === 'true', 'drawer did not open');
+      const a = config.about;
+      expect(about().textContent.includes(`Round ${a.round} · r${a.round}.${a.revision} · ${a.status}`), 'first line');
+      expect(about().textContent.includes(a.history[0].file), 'history file name');
+      key(document.activeElement, 'Escape');
+      expect(about().hidden && !panel().hidden, 'Esc should close only the drawer');
+      expect(localStorage.getItem('lab-about:variant-lab-example') === '0', 'closed state not remembered');
+    }),
+    CHECK('closed preset box shows the baseline; the list opens on click and focuses the current item', () => {
+      expect($('.pd-cur').textContent.includes('Today (baseline)'), 'closed box: ' + $('.pd-cur').textContent);
+      click(pdBtn()); expect(!listEl().hidden, 'list did not open');
+      expect(document.activeElement && document.activeElement.dataset.preset === 'Today (baseline)', 'focus is on ' + (document.activeElement && document.activeElement.textContent));
+    }),
+    CHECK('ArrowDown and End move through the list; no key reaches the page', () => {
+      const before = pageKeys;
+      const start = document.activeElement.dataset.preset;
+      key(document.activeElement, 'ArrowDown');
+      expect(document.activeElement.dataset.preset && document.activeElement.dataset.preset !== start, 'ArrowDown stayed on ' + start);
+      key(document.activeElement, 'End');
+      const all = $$('#lab-pd-list [data-preset]');
+      expect(document.activeElement === all[all.length - 1], 'End did not go to the last item');
+      key(document.activeElement, 'Home');
+      expect(document.activeElement === all[0], 'Home did not go to the first item');
+      expect(pageKeys === before, 'page received keys');
+    }),
+    CHECK('Esc closes the list only; the panel stays open and the page gets no key', () => {
+      const before = pageKeys;
+      key(document.activeElement, 'Escape');
+      expect(listEl().hidden && !panel().hidden, 'Esc should close the list only');
+      expect(pageKeys === before, 'page received Esc');
+      expect(document.activeElement === pdBtn(), 'focus should return to the preset button');
+    }),
+    CHECK('a preset click applies it and closes the list', () => {
+      click(pdBtn()); click($('[data-preset="Quick browsing"]'));
+      expect(listEl().hidden, 'list still open'); expect(lab.state.focus === 'glow' && lab.state.speed === '80', 'state ' + JSON.stringify(lab.state));
+      expect($('.pd-cur').textContent.includes('Quick browsing'), 'box does not show the preset');
+      expect(lastRender.current.focus === 'glow', 'render not called');
+    }),
+    CHECK('slider min and max sit at the two ends of the bar, on the same line; no "today" text or tick', () => {
+      click(pdBtn()); click($('[data-preset="Today (baseline)"]'));
+      const wrap = rangeInput('speed').closest('.rwrap'), [lo, bar, hi] = [...wrap.children];
+      expect(lo.classList.contains('end') && bar === rangeInput('speed') && hi.classList.contains('end'), 'order is not min, bar, max');
+      expect(lo.textContent === '0' && hi.textContent === '400', `ends: ${lo.textContent} / ${hi.textContent}`);
+      const c = el => { const r = el.getBoundingClientRect(); return r.top + r.height / 2; };
+      expect(Math.abs(c(lo) - c(bar)) < 4 && Math.abs(c(hi) - c(bar)) < 4, 'ends are not on the bar line');
+      expect(lo.getBoundingClientRect().right <= bar.getBoundingClientRect().left + 1 && hi.getBoundingClientRect().left >= bar.getBoundingClientRect().right - 1, 'ends overlap the bar');
+      expect(!$('.lab-panel .tick, .lab-panel .tick-l, .lab-panel .scale, .lab-panel .pk-tick'), 'old tick or scale still drawn');
+    }),
+    CHECK('switch toggles and updates aria-checked', () => {
+      const sw = $('.switch[data-s="titles"]');
+      click(sw); expect(sw.getAttribute('aria-checked') === 'false' && lab.state.titles === 'off', 'did not turn off');
+      click(sw); expect(sw.getAttribute('aria-checked') === 'true' && lab.state.titles === 'on', 'did not turn on');
+    }),
+    CHECK('checkboxes store canonical "a,b" and the address shows extras=badge%2Crating', () => {
+      const box = v => $(`[data-c="extras"][value="${v}"]`);
+      box('rating').click(); box('badge').click();
+      expect(lab.state.extras === 'badge,rating', 'state ' + lab.state.extras);
+      expect(location.hash.includes('extras=badge%2Crating'), 'hash ' + location.hash);
+    }),
+    CHECK('a custom mix reads just "Custom mix", with no "based on" or change list', () => {
+      expect($('.pd-cur').textContent.trim() === 'Custom mix', 'box: ' + $('.pd-cur').textContent);
+      expect(!$('[data-diff]') && !panel().textContent.includes('Based on') && !/\d+ changes? from baseline/.test(panel().textContent), 'diff text still drawn');
+    }),
+    CHECK('a bad number is not applied, shows a message and Esc restores it', () => {
+      click(fab()); click(fab()); // keep open
+      const n = numInput('speed'); n.value = '999'; n.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(lab.state.speed === '80' || lab.state.speed === '220' || lab.state.speed === '160', 'typing applied a value');
+      key(n, 'Enter');
+      const err = $('[data-err="speed"]');
+      expect(!err.hidden && err.textContent.includes('Enter a number from 0 to 400'), 'message: ' + err.textContent);
+      expect(n.getAttribute('aria-invalid') === 'true', 'aria-invalid not set');
+      expect(lab.state.speed !== '999', 'invalid value applied');
+      key(n, 'Escape');
+      expect(n.value === lab.state.speed && n.getAttribute('aria-invalid') === 'false' && err.hidden, 'Esc did not restore');
+      expect(!panel().hidden, 'Esc closed the panel instead');
+    }),
+    CHECK('a valid number applies on Enter, not while typing; arrows step and apply', () => {
+      const n = numInput('speed');
+      n.value = '200'; n.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(lab.state.speed !== '200', 'applied while typing');
+      key(n, 'Enter');
+      expect(lab.state.speed === '200' && rangeInput('speed').value === '200', 'Enter did not apply');
+      key(n, 'ArrowUp'); expect(lab.state.speed === '220', 'ArrowUp gave ' + lab.state.speed);
+      key(n, 'ArrowDown'); key(n, 'ArrowDown'); expect(lab.state.speed === '180', 'ArrowDown gave ' + lab.state.speed);
+      n.value = '180'; n.dispatchEvent(new Event('input', { bubbles: true }));
+      n.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+      expect(lab.state.speed === '180', 'leaving the field did not apply');
+    }),
+    CHECK('a number field that only had focus never writes an old value over a newer selection', () => {
+      const n = numInput('speed');
+      n.focus(); lab.set({ speed: '300' });
+      expect(n.value === '300', 'focused field still shows ' + n.value);
+      n.blur(); expect(lab.state.speed === '300', 'leaving the field reset speed to ' + lab.state.speed);
+      n.focus(); n.value = '240'; n.dispatchEvent(new Event('input', { bubbles: true })); n.blur();
+      expect(lab.state.speed === '240', 'a typed value was not applied on leaving: ' + lab.state.speed);
+    }),
+    CHECK('holding B renders the baseline and releases; the selection and the address do not change', () => {
+      const before = lab.state, hash = location.hash;
+      const liveFocus = before.focus;
+      lastRender.current = null;
+      const b = { key: 'b', bubbles: true, cancelable: true };
+      document.dispatchEvent(new KeyboardEvent('keydown', b));
+      expect(lastRender.current && lastRender.current.focus === 'ring', 'baseline not rendered: ' + JSON.stringify(lastRender.current));
+      expect(!$('.cmp-bar').hidden && $('.cmp-bar').textContent.includes('release B to return'), 'bar missing');
+      expect(JSON.stringify(lab.state) === JSON.stringify(before) && location.hash === hash, 'selection changed');
+      document.dispatchEvent(new KeyboardEvent('keyup', b));
+      expect(lastRender.current.focus === liveFocus && $('.cmp-bar').hidden, 'did not return');
+    }),
+    CHECK('Hold to compare button works with a pointer, too', () => {
+      const hold = $('[data-hold]');
+      hold.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }));
+      expect(!$('.cmp-bar').hidden, 'bar missing while held');
+      hold.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+      expect($('.cmp-bar').hidden, 'bar still shown after release');
+      expect(hold.textContent.trim() === 'Hold B' && hold.getAttribute('aria-label') === 'Hold B to compare', 'button text: ' + hold.textContent);
+      expect(hold.closest('.lbl') && hold.closest('[data-sec=":preset"]'), 'Hold is not in the Preset header');
+      key(hold, ' '); expect(!$('.cmp-bar').hidden, 'Space held on the button does not compare');
+      hold.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', bubbles: true })); expect($('.cmp-bar').hidden, 'Space release did not return');
+    }),
+    CHECK('holding B works with the panel closed (a tag says so) and is off while lab UI is hidden with L or ?lab=0', () => {
+      lab.set({ speed: '300' }); lab.open(false); expect(panel().hidden, 'panel did not close');
+      const live = lab.state.speed, tag = $('.lab-cmp-tag');
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', bubbles: true, cancelable: true }));
+      expect(lastRender.current.speed === '160', 'baseline not shown with the panel closed: ' + lastRender.current.speed);
+      expect(tag && !tag.hidden && tag.textContent.includes('release B'), 'no "showing baseline" tag');
+      document.dispatchEvent(new KeyboardEvent('keyup', { key: 'b', bubbles: true }));
+      expect(lastRender.current.speed === live && tag.hidden, 'did not return after release');
+      LabChrome.setOff(true);
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', bubbles: true, cancelable: true }));
+      const during = lastRender.current.speed;
+      document.dispatchEvent(new KeyboardEvent('keyup', { key: 'b', bubbles: true }));
+      LabChrome.setOff(false);
+      expect(during === live, 'compare ran while lab UI was hidden');
+      lab.open(true); expect(!panel().hidden, 'panel did not reopen');
+    }),
+    CHECK('no note text under the rows: a note is the row tooltip, and markers carry tooltips', () => {
+      expect(!$('.lab-panel .lab-hint'), 'a note is still drawn as text');
+      expect([...$$('.lab-panel .lbl span[title]')].some(el => el.title === config.notes.focus), 'the focus note is not the row tooltip');
+      expect($$('.lab-panel .cfm').length === 1 && $('.lab-panel .cfm').title === config.notes.gap, 'the CONFIRM note has no "?" marker');
+      const untitled = $$('.lab-panel .ai, .lab-panel .new').filter(el => !el.title);
+      expect(untitled.length === 0, untitled.length + ' tags without a tooltip');
+    }),
+    CHECK('only two marks exist, a star (AI pick) and a dot (new), icons with no text, at most one per item, right after the text', () => {
+      expect(!$('.lab-panel .now, .lab-panel .pick, .lab-panel .star, .lab-panel .by, .lab-panel .rd'), 'an old marker is still drawn');
+      const ai = $$('.lab-panel .ai'), nw = $$('.lab-panel .new');
+      expect(ai.length && ai.every(el => el.textContent.trim() === '' && el.querySelector('svg') && el.getAttribute('aria-label') === 'AI pick'), 'the AI pick is not a star icon');
+      expect(nw.length && nw.every(el => el.textContent.trim() === '' && el.getAttribute('aria-label') === 'New this round'), 'the new mark is not a dot');
+      expect($('.lab-panel .pd-item[data-k="focus"][data-v="scale"] .ai') && $('.lab-panel .pd-item[data-k="focus"][data-v="glow"] .new'), 'the focus menu items miss their marks');
+      const both = $$('.lab-panel .pd-item, .lab-panel label.chk, .lab-panel .pd-name, .lab-panel .pd-cur, .lab-panel .tog, .lab-panel .lbl').filter(el => el.querySelectorAll(':scope > .ai, :scope > .new').length > 1);
+      expect(both.length === 0, both.length + ' items with two marks');
+      const m = $('.lab-panel .pd-item[data-k="focus"][data-v="scale"] .ai'), t = m.previousElementSibling;
+      expect(t && m.getBoundingClientRect().left - t.getBoundingClientRect().right < 8, 'the star is not right after the text');
+    }),
+    CHECK('a single choice is a dropdown: one menu at a time, the pick applies and closes it, the closed field shows the value', () => {
+      expect(!$('.lab-panel .opts') && $$('.lab-panel [data-k]').every(b => b.closest('.pd-list')), 'a choice is still drawn as a button group');
+      const sec = $('[data-sec="focus"]'), btn = sec.querySelector('.pd-btn'), list = sec.querySelector('.pd-list');
+      click(pdBtn()); expect(!listEl().hidden, 'preset list did not open');
+      click(btn); expect(listEl().hidden && !list.hidden, 'opening the focus menu did not close the preset list');
+      expect(document.activeElement && document.activeElement.dataset.v === lab.state.focus, 'focus is not on the selected item');
+      click(sec.querySelector('[data-v="glow"]'));
+      expect(list.hidden && lab.state.focus === 'glow' && document.activeElement === btn, 'the pick did not apply and close');
+      expect(sec.querySelector('.pd-cur').textContent.trim() === 'Glow' && sec.querySelector('.pd-cur .new'), 'closed field: ' + sec.querySelector('.pd-cur').textContent);
+      expect(sec.querySelector('.pd-item[data-v="glow"]').getAttribute('aria-pressed') === 'true', 'the selected item has no tick');
+      const tk = sec.querySelector('.pd-item[data-v="glow"] .pd-tk');
+      expect(getComputedStyle(tk).visibility === 'visible' && getComputedStyle(sec.querySelector('.pd-item[data-v="ring"] .pd-tk')).visibility === 'hidden', 'tick visibility');
+      const r1 = getComputedStyle(btn).borderTopLeftRadius, r2 = getComputedStyle(list).borderTopLeftRadius;
+      expect(r1 === r2, `menu radius ${r2} differs from the field radius ${r1}`);
+      click(btn); key(document.activeElement, 'Escape'); expect(list.hidden && document.activeElement === btn && !panel().hidden, 'Esc did not close the menu');
+    }),
+    CHECK('the menu follows the mode: white in day, dark in night', () => {
+      const sec = $('[data-sec="focus"]'), list = sec.querySelector('.pd-list');
+      click(sec.querySelector('.pd-btn'));
+      const bg = getComputedStyle(list).backgroundColor;
+      key(document.activeElement, 'Escape');
+      expect(theme === 'dark' ? bg === 'rgb(30, 30, 30)' : bg === 'rgb(255, 255, 255)', `${theme} menu is ${bg}`);
+    }),
+    CHECK('every menu opens fully inside the panel body (above the field when the field is low), never under the footer', () => {
+      const area = $('.lab-panel .scroll'), bad = [];
+      for (const btn of $$('.lab-panel .pd-btn')) {
+        btn.scrollIntoView({ block: 'nearest' });
+        click(btn);
+        const list = btn.closest('.pd').querySelector('.pd-list'), a = area.getBoundingClientRect(), r = list.getBoundingClientRect();
+        if (r.top < a.top - 1 || r.bottom > a.bottom + 1) bad.push(`${btn.closest('[data-sec]')?.dataset.sec}: ${Math.round(r.top)}–${Math.round(r.bottom)} outside ${Math.round(a.top)}–${Math.round(a.bottom)}`);
+        key(document.activeElement, 'Escape');
+      }
+      area.scrollTop = 0;
+      expect(bad.length === 0, bad.join('; '));
+    }),
+    CHECK('sections collapse with their chevron and the state is remembered', () => {
+      const sec = $('[data-sec="density"]'), tog = sec.querySelector('.tog'), body = sec.querySelector('.sc');
+      expect(!body.hidden && tog.getAttribute('aria-expanded') === 'true', 'should start open');
+      click(tog); expect(body.hidden && tog.getAttribute('aria-expanded') === 'false' && sec.classList.contains('shut'), 'did not collapse');
+      expect(JSON.parse(localStorage.getItem('lab-sec:variant-lab-example')).density === 0, 'not remembered');
+      click(tog); expect(!body.hidden, 'did not open again');
+      const lines = $$('.lab-panel .scroll > .sec').filter(s => parseFloat(getComputedStyle(s).borderBottomWidth) === 1);
+      expect(lines.length === $$('.lab-panel .scroll > .sec').length, 'not every section has a full-width line');
+      const pr = panel().getBoundingClientRect(), sr = sec.getBoundingClientRect();
+      expect(Math.abs(sr.left - pr.left) < 1 && Math.abs(sr.right - pr.right) < 12, 'the line is not full width');
+    }),
+    CHECK('checkboxes are one column, one line each, with an ellipsis for long text', () => {
+      const rows = $$('.lab-panel label.chk');
+      expect(rows.length && rows.every(r => r.getBoundingClientRect().height <= 24.5 && getComputedStyle(r).whiteSpace === 'nowrap'), 'a checkbox row wraps');
+      const txt = rows[0].querySelector('.box + span');
+      expect(getComputedStyle(txt).textOverflow === 'ellipsis', 'no ellipsis on checkbox text');
+      const xs = new Set(rows.map(r => Math.round(r.getBoundingClientRect().left)));
+      expect(xs.size === 1, 'checkboxes are not one column');
+    }),
+    CHECK('the Note is a collapsible section (closed at first), and what is written goes into the export', () => {
+      const sec = $('[data-note-box]'), tog = sec.querySelector('.tog'), ta = $('[data-note]');
+      expect(sec.classList.contains('sec') && sec.querySelector('.sc').hidden, 'note section should start closed');
+      expect(!$('[data-act="note"]'), 'the old Add note button is still drawn');
+      click(tog); expect(!sec.querySelector('.sc').hidden, 'note did not open');
+      ta.focus(); ta.value = 'Selftest note'; ta.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(JSON.parse(lab.exportJSON()).reviewerNote === 'Selftest note', 'note missing from export');
+      key(ta, 'Escape'); expect(sec.querySelector('.sc').hidden && !panel().hidden && document.activeElement === tog, 'Esc should close the note only');
+    }),
+    CHECK('the footer has three buttons: Reset, Load saved, Save selection; none is blue', () => {
+      const bs = $$('.lab-foot button').map(b => b.textContent.trim());
+      expect(bs.join(' · ') === 'Reset · Load saved · Save selection', bs.join(' · '));
+      const blue = $$('.lab-foot button').filter(b => /53, 87, 255/.test(getComputedStyle(b).backgroundColor + getComputedStyle(b).color));
+      expect(blue.length === 0, 'a footer button is blue');
+    }),
+    CHECK('the file name follows the rule: lab, round.revision, nearest preset, changes, date', () => {
+      const name = lab.fileName();
+      expect(/^variant-lab-example_r2\.3_[a-z0-9-]+(\+[a-z0-9-]+(-[a-z0-9-]+){0,2})?_\d{4}-\d{2}-\d{2}\.json$/.test(name), name);
+      expect(name.includes('guided-browsing') || name.includes('quick-browsing') || name.includes('today-baseline'), 'no nearest preset: ' + name);
+    }),
+    CHECK('Reset goes back to the baseline', () => {
+      click($('[data-act="reset"]'));
+      expect(lab.state.focus === 'ring' && lab.state.speed === '160' && lab.state.extras === '', 'state ' + JSON.stringify(lab.state));
+      expect($('.pd-cur').textContent.includes('Today (baseline)'), 'box after reset');
+    }),
+    CHECK('the sun/moon button switches the lab look only', () => {
+      const before = document.documentElement.getAttribute('data-lab-theme');
+      click($('.mode')); const after = document.documentElement.getAttribute('data-lab-theme');
+      expect(before !== after, 'theme did not change');
+      click($('.mode'));
+    }),
+    CHECK('the panel only floats: no pin button, and opening it never changes the page width', async () => {
+      expect(!$('.lab-panel .dock'), 'pin button still drawn');
+      lab.open(false); await frame(); const w = document.body.getBoundingClientRect().width;
+      lab.dock(true); lab.open(true); await frame();
+      expect(!document.documentElement.classList.contains('lab-docked') && document.body.getBoundingClientRect().width === w, 'page width changed');
+    }),
+    CHECK('Esc order: list, then About, then a bad number, then the panel', () => {
+      click(pdBtn()); expect(!listEl().hidden, 'list');
+      key(document.activeElement, 'Escape'); expect(listEl().hidden && !panel().hidden, 'step 1');
+      click($('.ico.info')); expect(!about().hidden, 'about');
+      key(document.activeElement, 'Escape'); expect(about().hidden && !panel().hidden, 'step 2');
+      const n = numInput('gap'); n.value = '999'; key(n, 'Enter'); expect(n.getAttribute('aria-invalid') === 'true', 'step 3 prep');
+      key(n, 'Escape'); expect(n.value === lab.state.gap && !panel().hidden, 'step 3');
+      key(document.activeElement, 'Escape'); expect(panel().hidden, 'step 4');
+      expect(document.activeElement === fab(), 'focus should return to the LAB button');
+    }),
+    CHECK('the panel is open again for the checks below', () => { if (panel().hidden) click(fab()); expect(!panel().hidden, 'panel'); }),
+    CHECK('there is no legend at the bottom of the panel', () => { expect(!$('.lab-panel .legend'), 'legend still drawn'); }),
+    CHECK('no text in the panel is smaller than 11 px', () => {
+      const small = [];
+      $$('.lab-panel *').forEach(el => {
+        const text = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent.trim()).join('');
+        if (text && parseFloat(getComputedStyle(el).fontSize) < 11) small.push(text.slice(0, 20) + ' ' + getComputedStyle(el).fontSize);
+      });
+      expect(small.length === 0, small.join('; '));
+    }),
+    CHECK('the panel has no horizontal overflow', () => { const p = panel(); expect(p.scrollWidth <= p.clientWidth + 1, `${p.scrollWidth} > ${p.clientWidth}`); }),
+    CHECK('the blue star reaches 4.5:1 on the panel and in the menu', () => {
+      const pairs = [['--b-blue-text', '--b-bg'], ['--b-blue-text', '--b-surface'], ['--b-menu-ai', '--b-menu']];
+      const bad = pairs.map(([f, b]) => [token(f), token(b), contrast(token(f), token(b))]).filter(([, , r]) => r < 4.5);
+      expect(bad.length === 0, bad.map(([f, b, r]) => `${f} on ${b} is ${r.toFixed(2)}:1`).join(', '));
+    }),
+    CHECK('menu text reaches 4.5:1 on the menu', () => {
+      const bad = ['--b-menu-ink', '--b-menu-muted'].map(n => [n, contrast(token(n), token('--b-menu'))]).filter(([, r]) => r < 4.5);
+      expect(bad.length === 0, bad.map(([n, r]) => `${n} ${r.toFixed(2)}`).join(', '));
+    }),
+    CHECK('night mode is softer than black on white: ink on the panel stays under 13:1', () => {
+      if (theme !== 'dark') return;
+      const r = contrast(token('--b-ink'), token('--b-surface')); expect(r < 13 && r >= 7, `ink on surface is ${r.toFixed(2)}:1`);
+    }),
+    CHECK('the white gear on the blue button reaches 4.5:1', () => {
+      const r = contrast('#ffffff', token('--b-blue')); expect(r >= 4.5, `white on blue is ${r.toFixed(2)}:1, needs 4.5:1`);
+    }),
+    CHECK('muted text, error red and ink reach 4.5:1 on the paper', () => {
+      const bg = token('--b-bg');
+      const rs = { muted: contrast(token('--b-muted'), bg), red: contrast(token('--b-red'), bg), ink: contrast(token('--b-ink'), bg) };
+      const bad = Object.entries(rs).filter(([, v]) => v < 4.5).map(([k, v]) => `${k} ${v.toFixed(2)}`);
+      expect(bad.length === 0, bad.join(', '));
+    }),
+    CHECK('no console errors', () => { expect(errors.length === 0, errors.join(' | ')); }),
+  ];
+
+  for (const c of checks) {
+    try { await c.fn(); results.push([true, c.name]); }
+    catch (e) { results.push([false, c.name, e.message]); }
+    show();
+  }
+  lab.open(false);
+
+  // ---- the unit tests of variant-lab-export.test.cjs, run in this page through a small shim for require() ----
+  const files = {};
+  try {
+    for (const n of ['variant-lab.js', 'variant-lab-export.test.cjs']) {
+      const r = await fetch(n); if (!r.ok) throw new Error(n); files[n] = await r.text();
+    }
+  } catch (e) {
+    results.push([false, 'unit tests: could not read variant-lab.js and the test file (open the folder through a local server, or start Chrome with --allow-file-access-from-files)']);
+    show(); return;
+  }
+  const deq = (a, b) => {
+    if (Object.is(a, b)) return true;
+    if (typeof a !== 'object' || typeof b !== 'object' || !a || !b) return false;
+    const ka = Object.keys(a).sort(), kb = Object.keys(b).sort();
+    return ka.length === kb.length && ka.every((k, i) => k === kb[i] && deq(a[k], b[k]));
+  };
+  const assertLib = {
+    equal: (a, b) => { if (!Object.is(a, b)) throw new Error(`expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`); },
+    notEqual: (a, b) => { if (Object.is(a, b)) throw new Error('values should differ: ' + JSON.stringify(a)); },
+    deepEqual: (a, b) => { if (!deq(a, b)) throw new Error(`expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`); },
+    ok: v => { if (!v) throw new Error('not ok'); },
+    match: (s, re) => { if (!re.test(String(s))) throw new Error(`"${s}" does not match ${re}`); },
+    throws: (fn, re) => { let threw = false; try { fn(); } catch (e) { threw = true; if (re && !re.test(String(e.message))) throw new Error('wrong error: ' + e.message); } if (!threw) throw new Error('did not throw'); },
+  };
+  const tests = [];
+  const memStore = () => { const m = {}; return { getItem: k => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: k => { delete m[k]; } }; };
+  const testFn = (name, fn) => tests.push([name, fn]); testFn.test = testFn;
+  const modules = {
+    'node:test': testFn,
+    'node:assert/strict': assertLib,
+    'node:vm': { runInNewContext: (code, ctx) => { const c = { localStorage: memStore(), ...ctx }; return new Function('ctx', 'with (ctx) {\n' + code + '\n}')(c); } },
+    'node:fs': { readFileSync: p => { const f = files[String(p).split('/').pop()]; if (f === undefined) throw new Error('no file ' + p); return f; } },
+    'node:path': { join: (...p) => p.filter(Boolean).join('/') },
+  };
+  const requireShim = m => { if (!(m in modules)) throw new Error('shim has no ' + m); return modules[m]; };
+  try { new Function('require', 'process', '__dirname', files['variant-lab-export.test.cjs'])(requireShim, { env: {} }, ''); }
+  catch (e) { results.push([false, 'unit tests: could not load the test file', e.message]); show(); return; }
+  for (const [name, fn] of tests) {
+    try { await fn(); results.push([true, 'unit: ' + name]); }
+    catch (e) { results.push([false, 'unit: ' + name, e.message]); }
+    show();
+  }
+  show();
+})();
+</script>
+</body></html>

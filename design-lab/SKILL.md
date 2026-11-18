@@ -3,7 +3,7 @@ name: design-lab
 description: Use when a user wants to compare design directions, adjust a component or page in a live preview, check content edge cases, or refine a design against an exact reference.
 metadata:
   author: Pei Shi Hu
-  version: "1.5.2"
+  version: "1.5.3"
 ---
 
 # Design Lab
@@ -12,6 +12,14 @@ metadata:
 Design Lab helps a designer turn an initial AI draft into a design they can evaluate and adjust. The reviewer changes controls while the real preview remains visible. A saved selection carries the values and feedback into the next round.
 
 The initial draft is a starting point. The user's description of “about 60%” is a statement about their experience. It is not a measured quality score or a delivery threshold. Technical correctness and truthful reporting apply from the first draft.
+
+## Required tool panel route
+
+For any interactive control panel, read the sibling [variant-lab/SKILL.md](../variant-lab/SKILL.md) before implementation or repair. Follow its [panel integration contract](../variant-lab/references/panel-integration.md). Reuse the bundled runtime and its Figma-inspired tool styles. Do not build a custom panel because the lab is small, uses React or already has native inputs.
+
+Product tokens govern the preview. Runtime --b-* tokens govern the tool panel. A product screenshot or design reference does not authorize changing the tools. Keep runtime files unchanged; add scoped adapters only for a missing declared capability. Preserve all existing review and recovery requirements.
+
+Before handoff, run the source integration check and inspect the actual open panel. Record source integration, rendered tool conformity and product behavior separately in the lab README. A passing product test or JSON round-trip does not prove panel conformity. Missing panel evidence means this part of the lab is not ready. See the integration contract for the command, required fields and limitations.
 
 ## Terms
 

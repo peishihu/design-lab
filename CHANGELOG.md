@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.3 (2026-11-17)
+
+- Require the Variant Lab route before interactive-panel work, including repairs. Preserve product/tool style ownership.
+- Add a source integration checker for runtime hashes, references and mount binding, with seven regression cases.
+- Require actual open-panel conformity evidence separately from product and JSON tests. Source checks do not certify visual quality.
+- Keep runtime APIs and selection schema unchanged. Existing labs need integration review; a skill update does not repair them automatically.
+
 ## 1.5.2 (2026-11-12)
 
 - Export relative selection context instead of page addresses, preventing automatic inclusion of local paths, origin credentials or query strings.

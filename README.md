@@ -61,11 +61,15 @@ The agent validates the lab ID and values, reads the note, restores the declared
 
 The public candidate uses system fonts. Figma is the interface inspiration; this is not an official Figma product or specification.
 
+## Panel integration
+
+Interactive labs must reuse the bundled panel and keep product styles separate from tool styles. Follow [the integration contract](variant-lab/references/panel-integration.md), declare `panel-contract.json`, and run `node variant-lab/scripts/check-panel.mjs <lab>/panel-contract.json`. Inspect the open panel separately; the source check does not prove appearance or interaction quality. Existing labs need integration review after updating these skills.
+
 ## Capability boundaries
 
 The runtime provides a floating panel, basic controls, presets, Light/Dark tools, and selection save/load. The agent must build and verify component cases, control bindings, stricter domain validation, visible help, and responsive adapters when required. The runtime does not automatically measure pixel fidelity or serialize arbitrary application objects.
 
-Test the runtime with `node --test variant-lab/assets/variant-lab-export.test.cjs`. Browser checks are in `variant-lab/assets/selftest.html`; serve the folder if local reads are blocked. Test both tool themes. A passing state test does not verify visual fidelity or all device conditions.
+Test the runtime and panel checker with `node --test variant-lab/assets/variant-lab-export.test.cjs variant-lab/scripts/check-panel.test.mjs`. Browser checks are in `variant-lab/assets/selftest.html`; serve the folder if local reads are blocked. Test both tool themes. A passing state test does not verify visual fidelity or all device conditions.
 
 ## Maintainer and license
 

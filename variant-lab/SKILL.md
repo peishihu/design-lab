@@ -9,7 +9,7 @@ metadata:
 # Variant Lab
 
 
-Use the bundled panel to adjust a preview in place. Read the sibling `design-lab/SKILL.md` for the review workflow. For components, use its `references/component-cases.md` before declaring edge-case coverage.
+Use the bundled panel to adjust a preview in place. Read and follow [Required panel integration](references/panel-integration.md) before creating or repairing controls. This includes source verification and actual open-panel inspection; a hand-written shell is not an equivalent implementation. Read the sibling `design-lab/SKILL.md` for the review workflow. For components, use its `references/component-cases.md` before declaring edge-case coverage.
 
 ## Runtime and generated integration
 
@@ -184,6 +184,8 @@ Returned members: `undo()`, `canUndo`, `resetControl(key)`, `state`, `set(values
 `configHash` is eight hexadecimal characters. It reflects control domains and presets, not labels, notes, groups, or order. `groups` affects layout only. Section state uses `lab-sec:<id>`; note and About state are stored per lab. Browser storage is a convenience, not the handover artifact.
 
 ## Verify and hand over
+
+Run the panel integration check and record the rendered conformity evidence required by [panel-integration.md](references/panel-integration.md). Add the check to the lab verification command. Fix missing runtime or custom-shell defects before calling the panel ready. Keep the checks below; source verification does not replace them.
 
 1. Operate every control and all applicable fixtures. Check intended and unrelated targets.
 2. Check presets, Reset, partial/invalid numeric entry, nested Escape, baseline comparison, descriptions, note, and marker meanings.

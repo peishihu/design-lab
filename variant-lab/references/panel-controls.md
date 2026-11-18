@@ -1,8 +1,6 @@
 # Panel controls and runtime values
 
-The panel uses a Figma-inspired properties-panel structure to reduce learning effort. Figma is an interface reference, not the skill's author or an implied endorsement.
-
-This file documents the bundled runtime and the integration requirements. Values below are observed implementation values. They are not an official Figma specification. Product values remain governed by the project's design system.
+This guide describes the bundled runtime and integration requirements. Its properties-panel structure references Figma to reduce learning effort. Figma is an interface reference, not the author or an implied endorsement. Values below describe this implementation, not an official Figma specification. Follow the project design system for product values.
 
 ## Existing runtime
 
@@ -26,7 +24,7 @@ This file documents the bundled runtime and the integration requirements. Values
 
 ## Tool tokens
 
-Use existing `--b-*` values from `assets/variant-lab.css`. Do not copy product tokens into lab controls merely to make them match.
+Use `--b-*` values from `assets/variant-lab.css`. Do not copy product tokens into tools for visual matching.
 
 | Token family | Purpose |
 |---|---|
@@ -38,11 +36,11 @@ Use existing `--b-*` values from `assets/variant-lab.css`. Do not copy product t
 | `--b-menu-*` | Menu surfaces, text, and states |
 | `--b-shadow`, `--b-menu-shadow` | Floating surface separation |
 
-Read the installed CSS for exact colors. Verify actual text/background contrast in both themes. Do not assume every faint color is suitable for text from its token name.
+Read installed CSS for exact colors. Check actual text/background contrast in both themes. A faint token name does not establish text suitability.
 
 ## Additional controls
 
-The stock runtime does not mount the following controls. Add them only for a declared adjustment and provide state, validation, labels, keyboard use, reset, and export/import support.
+The stock runtime does not mount these controls. Add them only for declared adjustments. Provide state, validation, labels, keyboard use, reset, and export/import.
 
 | Need | Control and requirement |
 |---|---|
@@ -55,12 +53,12 @@ The stock runtime does not mount the following controls. Add them only for a dec
 | Persistent explanation | Associated short help or a keyboard-accessible disclosure |
 | Recommendation plus newness | Combined accessible description or About entry; do not imply two stock icons |
 
-Keep additional controls in the same logical sections and tool theme. Test every state-entry path. A custom input outside declared state is not automatically exported.
+Keep added controls in the same logical sections and tool theme. Test every state-entry path. Inputs outside declared state do not export automatically.
 
 ## Geometry requirements
 
-Verify panel bounds against the visible viewport, not document height. The stock fixed width and `100vh` bound do not establish virtual-keyboard or narrow-screen support.
+Check panel bounds against the visible viewport, not document height. Fixed width and `100vh` do not establish virtual-keyboard or narrow-screen support.
 
-Keep header, close action, active control, footer, and open menu reachable. Use a scoped adapter for visible-viewport sizing and clamping when needed. Keep page and panel scroll separate. Preserve the product's viewport and wrapping.
+Keep header, close, active control, footer, and open menu reachable. Add a scoped visible-viewport sizing/clamping adapter when needed. Keep page and panel scroll separate. Preserve product viewport and wrapping.
 
-Use the icon as a compact launcher. Preserve an adequate activation area and visible focus. Keep tools distinguishable from product controls. Do not replace live adjustment with a full-screen configuration page.
+Use a compact icon launcher with adequate activation area and visible focus. Distinguish tools from product controls. Do not replace live adjustment with a full-screen configuration page.

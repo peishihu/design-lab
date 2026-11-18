@@ -1,6 +1,6 @@
 # Project integration and continuation
 
-Use this guide when a lab uses running project code. The filename remains stable for earlier installations. Read the main skill for component cases, names, precision, and handover rules.
+Use this guide for labs with running project code. Keep this filename for earlier installations. Follow the main skill for component cases, names, precision, and handover.
 
 ## Record the next operation
 
@@ -14,13 +14,13 @@ Identify reusable components, tokens, assets, fixtures, routes, panel code, and 
 
 ## Integrate the preview
 
-Read the project's start instructions and package scripts. Reuse its package manager, route conventions, and available server. Inspect the target and direct dependencies. Do not replace working routing or install another router to host a lab.
+Read project start instructions and package scripts. Reuse its package manager, routes, and available server. Inspect the target and direct dependencies. Do not replace working routing or add a router for the lab.
 
 Keep tool integration separate from production entry points when possible. Record created paths and integration patches. Preserve unrelated edits and shared consumers. Reuse source components and fixture data rather than a styled replica.
 
 If the source cannot run, report the limitation. Offer an image-based lab when it can answer the question. Do not present that reconstruction as a verified running source.
 
-Use managed background execution for a needed server. Check readiness within a bounded interval. Report the actual address. Do not assume port 3000 or terminate unrelated processes.
+Run needed servers through managed background execution. Check readiness within a bounded interval. Report the actual address. Do not assume port 3000 or stop unrelated processes.
 
 For standalone pages, copy runtime files beside the page. Preserve asset load order. Use system fonts or approved local assets. A served page cannot load `file://` font URLs. Verify font loading under the promised opening method.
 
@@ -34,7 +34,7 @@ Use the same component implementation across all applicable cases. Keep a fixtur
 
 For every new dimension, set its baseline deliberately. Earlier files use that value when the dimension did not exist. Preserve existing control keys and preset identities. Add and test migration before removing compatibility.
 
-Use theme or purpose names for new variations. Put property differences in short descriptions. Preserve an earlier delta-based name only as a legacy saved-file identity.
+Name new variations by theme or purpose. Describe property differences briefly. Keep earlier delta-based names only as legacy saved-file identities.
 
 **Complete when:** the reviewer can change the intended design across the declared cases and reproduce the selected fixture and scope.
 
@@ -58,7 +58,7 @@ Read selected state, reason, and next request as separate inputs. Preserve basel
 
 Record the returned file, date, decision, and remaining question in the README. Copy that history into About. Increase round and reset revision when feedback starts the next cycle. Increase revision for later control, option, or preset changes.
 
-A combined direction is a named configuration. It does not require a lettered synthesis branch or restarted interview. If the adjustment misses the intent, restore the saved pick and revise the disputed dimension.
+Name combined configurations. Do not require a lettered synthesis branch or another interview. If an adjustment misses intent, restore the saved pick and revise the disputed dimension.
 
 **Complete when:** another reviewer can understand the next round without the original chat.
 

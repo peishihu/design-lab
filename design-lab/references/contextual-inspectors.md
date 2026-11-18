@@ -18,17 +18,17 @@ Inspect source, rendered elements, computed styles, and conditional data. Record
 | Scope | Family, instance, part, or state affected by edit and reset |
 | Status | Within system, Existing violation, Approved exception, or Unverified |
 
-Verify the rendered target. A source field alone does not prove that the part exists. Recompute controls after changing selection, fixture, variation, or state.
+Verify the rendered target; a source field does not prove presence. Recompute controls after selection, fixture, variation, or state changes.
 
 If a part is absent, hide its property controls. To add anatomy, use an explicitly requested variation or fixture capability. If the part exists but its fill or border is disabled, retain the enable control and hide dependent color, alpha, or width fields until enabled.
 
-Inventory relevant properties as Exposed, Fixed, Unsupported, or Excluded with a reason. Do not equate “all adjustable properties” with a universal CSS catalog. Retain each requested property or report its implementation gap.
+Classify relevant properties as Exposed, Fixed, Unsupported, or Excluded with reasons. “All adjustable properties” does not mean all CSS. Retain requested properties or report implementation gaps.
 
 ## Preserve edit scope
 
 Label the selected part and affected scope. Use family-level edits for reusable variations across fixtures. Use instance overrides only when requested. Preserve unrelated overrides and restore them when returning to that selection.
 
-Keep independently styled surfaces independent. A container fill must not change the nested action fill. Fill alpha changes the fill color only. Whole-element opacity is a separate property. Disabling a decorative border must not remove keyboard focus visibility.
+Keep independently styled surfaces separate. Container fill must not change nested action fill. Fill alpha affects fill color only; element opacity is separate. Disabling decorative borders must preserve visible keyboard focus.
 
 Reset must identify its destination: system default, inherited value, or source baseline. Reset only the labeled scope. A global reset requires an explicit global action. Restoring a source violation retains its status label.
 
@@ -38,13 +38,13 @@ Use shared source components, tokens, and behavior. Add scoped exploration adapt
 
 Derive permitted values from the intersection of project rules and component capabilities. Preserve semantic token identity even when two tokens resolve to the same number. A component that accepts named padding variants cannot accept every multiple of a spacing unit.
 
-Offer Off, None, or zero only when that property and component support it. Distinguish disabling an effect, removing an override, and disabling system enforcement.
+Offer Off, None, or zero only when both property and component support it. Distinguish disabling an effect, removing an override, and disabling system enforcement.
 
 Show the rule source, current value, system default, allowed domain, and status. If sources conflict, mark the domain Unverified and resolve the conflict before claiming compliance. Do not invent a scale or infer a default from the first preset.
 
 Apply a common validator before every state-entry path: control commit, programmatic update, preset, URL restoration, import, reset, recommendation, export, and application. The generic runtime's min/max checks are insufficient for token, step, and exception rules. Follow the runtime guide's adapter requirements.
 
-For invalid input, show the violated rule and valid alternatives. Keep the last applied state. Do not silently clamp, round, replace a token, or discard a saved configuration. Preserve an existing invalid source state as a labeled baseline rather than a permitted new choice.
+For invalid input, show the violated rule and valid alternatives. Keep the last applied state. Do not silently clamp, round, replace tokens, or discard saved configurations. Keep invalid source states as labeled baselines, not permitted new choices.
 
 ## Handle an explicit exception
 
@@ -60,7 +60,7 @@ Reuse prior approval only for the same scope. “Be creative” or “pixel-perf
 
 While the exception is active, show Experimental / outside design system. Save its reason, scope, rule version when available, and decision record in the lab's supported model. A URL flag is not evidence of approval. The stock selection exporter does not capture arbitrary exception metadata; provide a tested extension or include the decision record with the lab.
 
-An exception cannot bypass type validity, security, or accessibility. A lab exception does not change global tokens or authorize production work.
+Exceptions cannot bypass type validity, security, or accessibility. Lab exceptions neither change global tokens nor authorize production.
 
 Before restoring enforcement, revalidate custom values. Offer a compliant mapping and obtain a valid choice. Keep the experimental state visible until the conflict is resolved. Do not silently snap or erase it. Revalidate when theme, system, component, or scope changes.
 
@@ -70,7 +70,7 @@ Use switch for one reversible on/off setting, checkboxes for independent inclusi
 
 Use numeric entry for precision and a slider for useful bounded exploration. Set unit, range, step, and base from the actual domain. Keep partial drafts editable. Commit according to Enter/blur behavior. Escape restores the applied value. Prevent panel scrolling from changing numeric values.
 
-Use labeled swatches or token inputs for visual tokens. Preserve non-color selection cues and precise values. Use buttons for actions. Reuse native or accessible existing primitives. Do not replace every question with a slider.
+Use labeled swatches or token inputs for visual tokens. Preserve non-color selection cues and precise values. Use action buttons and native or accessible existing primitives. Do not use sliders for every question.
 
 Maintain focused fields during preview updates. Preserve cursor position. Expensive updates may commit on release when that behavior is explained. Provide keyboard step changes and non-drag alternatives.
 
@@ -106,4 +106,4 @@ Check these anatomy cases when supported:
 | Outline disabled | Color and width stay hidden; focus remains visible |
 | Another instance has overrides | Selected-part edit/reset preserves the other instance |
 
-Completion requires a verified binding for each visible control and a recorded result for each applicable case. A schema audit or control count alone is insufficient.
+Complete only with verified bindings for every visible control and recorded results for every applicable case. Schema audits or control counts alone are insufficient.

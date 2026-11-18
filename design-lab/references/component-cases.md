@@ -1,6 +1,6 @@
 # Component cases
 
-Use this guide for every reusable-component comparison. Build cases before fine adjustment. Keep fixture content separate from variation values.
+Use this guide for every reusable-component comparison. Build cases before fine adjustment. Separate fixture content from variation values.
 
 ## Define the coverage boundary
 
@@ -10,7 +10,7 @@ Use this guide for every reusable-component comparison. Build cases before fine 
 4. List each applicable case below. Mark an absent capability Not applicable and give a reason.
 5. Generate the finite set of supported combinations that can affect the design. Exclude impossible combinations using the source contract.
 
-“All cases” means all cases in this declared component contract. It does not mean every possible string or all unrelated CSS properties. Do not call a sample exhaustive. If the full supported matrix is too large to render at once, paginate or select cases. If verification is reduced to a sample, record the untested combinations and obtain agreement before reducing requested coverage.
+“All cases” means the declared component contract, not every string or unrelated CSS property. Samples are not exhaustive. Paginate or select cases when the supported matrix cannot render at once. Before reducing requested verification to samples, record untested combinations and obtain agreement.
 
 ## Content and state matrix
 
@@ -43,7 +43,7 @@ For a card with optional subtitle, image, and badge, include these independently
 - Long badge with long title at the minimum supported width.
 - Combined missing optional fields when the source permits that state.
 
-Add combinations for other interacting dimensions. Do not create an artificial badge capability when the source has none. To explore adding a badge, declare that as a separate design requirement.
+Add combinations for other interacting dimensions. Do not invent badge support. Declare badge addition as a separate design requirement.
 
 ## Render and edit rules
 
@@ -62,4 +62,4 @@ Maintain this table in the lab README or a linked case file:
 | Case ID | Input condition | Expected result | Rendered | Operated | Result or gap |
 |---|---|---|---|---|---|
 
-Use Pass, Fail, Not tested, or Not applicable with a reason. Generated is not the same as verified. After a shared design change, recheck every affected case. Do not claim all cases pass from one normal sample or a state-only unit test.
+Record Pass, Fail, Not tested, or Not applicable with a reason. Generated does not mean verified. Recheck every affected case after shared design changes. One normal sample or state-only test cannot prove all cases pass.

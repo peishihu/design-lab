@@ -1,14 +1,14 @@
 # Design review defaults
 
-Use these defaults only when the project has no applicable rule. The approved baseline and explicit user requirements take priority. Read only the relevant section.
+Use defaults only without applicable project rules. Approved baselines and explicit user requirements take priority. Read only relevant sections.
 
 ## Decision quality
 
-Check whether the user can identify the next action, see the current state, recover from mistakes, and complete the task with the available input method. Use one clear primary action where the task has one. Group related information. Prefer recognition to recall.
+Check whether the user can identify the next action, see state, recover from mistakes, and complete the task with the available input method. Use one clear primary action when the task has one. Group related information. Prefer recognition to recall.
 
-Give input feedback promptly. Approximately 100ms is a useful responsiveness target, not proof of task completion. Keep status visible during longer operations. Explain failures with a recovery action.
+Give prompt input feedback. Approximately 100ms is a responsiveness target, not proof of task completion. Show status during longer operations. Explain failures and recovery.
 
-For destructive actions, state the consequence. Use a safe default and provide undo when feasible. Do not substitute a confirmation dialog for a clear operation.
+State destructive-action consequences. Use safe defaults and undo when feasible. Confirmation dialogs do not replace clear operations.
 
 ## Visual structure
 
@@ -18,11 +18,11 @@ Size text for its role and viewing distance. Keep line length readable. Check th
 
 Use color with another cue when it communicates state. Use text contrast of at least 4.5:1, or 3:1 for qualifying large text, and 3:1 for relevant non-text UI boundaries. Verify actual rendered pairs. Respect any stronger project requirement.
 
-Use concise action labels that describe the result. Keep terminology consistent. Describe an error and its remedy. Do not invent factual content for a convincing-looking sample.
+Use concise result-based action labels and consistent terms. Describe errors and remedies. Do not invent factual sample content.
 
 ## Component cases
 
-Use `references/component-cases.md`. A typical sample is not sufficient. Compare the same fixture set across variations. Give each variation a theme or purpose name and a short description. Keep content changes separate from design changes.
+Use `references/component-cases.md`; a typical sample is insufficient. Compare variations with the same fixtures. Give each a theme or purpose name and short description. Separate content from design changes.
 
 Evaluate applicable default, hover, focus, pressed, selected, disabled, loading, empty, error, and success states. Define missing-data behavior. Report unsupported or untested states explicitly.
 
@@ -54,4 +54,4 @@ Support interruption and rapid repeated actions. Do not queue focus transitions.
 
 Check empty, minimum, maximum, failed, and missing content. Resize quickly and interrupt transitions. Operate the lab with the required input method. A code read does not verify a rendered result.
 
-For precise matching, use the main skill's controlled reference procedure. Record remaining mismatches, unavailable assets, untested conditions, and the next useful action.
+For precise matching, use the main skill's controlled-reference procedure. Record remaining mismatches, missing assets, untested conditions, and next useful action.

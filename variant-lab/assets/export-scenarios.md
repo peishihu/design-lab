@@ -2,7 +2,7 @@
 
 **Quickest:** open `selftest.html` in this folder in a browser, then again with `?theme=dark`. It mounts the config of `example.html`, checks the panel and runs the unit tests below, and prints ✓ / ✗ per check. No Node needed. The unit-test part needs the browser to read local files: open the folder through a local server, or start Chrome with `--allow-file-access-from-files`.
 
-With Node 18 or newer you can also run the unit tests from the `variant-lab` folder:
+With Node.js 20 or newer (verified on 20.20.2), run tests from the `variant-lab` folder:
 
 ```sh
 node --test assets/variant-lab-export.test.cjs
@@ -24,7 +24,7 @@ The tests mount the actual browser asset in a small DOM/storage-free harness. Th
 8. Hold **B** (focus not in a text field): the page shows the baseline and a bar reads "Showing baseline — release B to return". Release: your selection is back and the address bar did not change. This works with the panel closed too (a tag above the gear button says so), but not while lab UI is hidden with L or `?lab=0`. Pressing and holding **Hold B to compare** next to the preset label does the same with a mouse, trackpad or finger, and keeps working if the pointer drifts off the button while held.
 9. Copy the lab folder somewhere else (or to another computer), open it there and load the same file. It must restore, because the lab id does not depend on the file path.
 10. In the browser console temporarily make `URL.createObjectURL` throw, then press Save selection. The status explains the failure, the selection stays unchanged, and retry works after restoring the function.
-11. Check keyboard activation, visible focus, the sun/moon icon (tooltip "Switch panel to dark mode"; dark is a soft charcoal, not black; there is no pin icon and the page never changes width), and the footer (Reset Â· Load saved Â· Save selection, none of them blue) on desktop and phone width. The panel is lab chrome and is hidden with the other lab controls by L (a small LAB tab stays as the way back) or `?lab=0` (nothing lab-only stays, for screenshots).
+11. Check keyboard activation, visible focus, the sun/moon icon (tooltip "Switch panel to dark mode"; dark is a soft charcoal, not black; there is no pin icon and the page never changes width), and the footer (Reset · Load saved · Save selection, none of them blue) on desktop and phone width. The panel is lab chrome and is hidden with the other lab controls by L (a small LAB tab stays as the way back) or `?lab=0` (nothing lab-only stays, for screenshots).
 
 ## Documentation pressure scenarios
 

@@ -1,8 +1,8 @@
 # Design Lab
 
-Turn an initial AI draft into a design you can inspect and adjust. Compare named directions on a live component or page. Test short, long, missing, and conditional content. Save the selected values and your note for the next review round.
+Inspect and adjust an AI draft. Compare named directions on a live component or page. Test short, long, missing, and conditional content. Save values and your note for the next round.
 
-The first draft is a starting point, not a measured quality score. Precise matching needs a reference, known conditions, and rendered checks.
+The first draft is a starting point, not a measured quality score. Precise matching requires a reference, known conditions, and rendered checks.
 
 ## Requirements
 
@@ -19,13 +19,13 @@ Keep `design-lab` and `variant-lab` beside each other. Open the unpacked folder 
 
 > Install these two skills in the location this client supports. Preserve existing instructions and installed customizations. Ask before overwriting them. Report the installed paths and verify that both skills load.
 
-If the agent has no skill mechanism, ask it to read `design-lab/SKILL.md` for each lab. Do not assume every client automatically loads the same file.
+Without a skill mechanism, ask the agent to read `design-lab/SKILL.md` for each lab. Do not assume automatic loading across clients.
 
 ## Start a lab
 
 > Use Design Lab. Target: [component or page]. Question: [decision]. Baseline: [source, screenshot, or measurements]. Adjust: [properties]. Purpose: [what the adjustment must improve]. Check: [content and interaction cases]. Precision: [reference and known values, if needed].
 
-The agent identifies relevant properties, controls, fixtures, and open decisions. It should not expose every possible CSS property or invent exact measurements.
+The agent identifies relevant properties, controls, fixtures, and open decisions. It should not expose all CSS properties or invent exact measurements.
 
 ## Review
 
@@ -37,21 +37,21 @@ The agent identifies relevant properties, controls, fixtures, and open decisions
 6. Open Note. Write why you chose the state and what should change next.
 7. Use Save selection. Give the JSON file back to the agent for the next round.
 
-Use Command+Z (macOS) or Ctrl+Z to undo the last selection. A changed control shows a small restore icon for that control only. The header Undo icon provides the same undo action. Text fields keep their native undo. Selection history lasts only until reload.
+Use Command+Z (macOS), Ctrl+Z, or header Undo for selection undo. Each changed control has its own restore icon. Text fields keep native undo. Reload clears selection history.
 
 Hold B or the Hold button to compare with baseline. Use Load saved to restore a file. Reset returns to baseline. Saving and selecting do not approve production changes.
 
 ## Open the example
 
-Open `variant-lab/assets/example.html`. It demonstrates the bundled panel and state behavior. It is not a complete component-case example for every requirement in this version.
+Open `variant-lab/assets/example.html` for bundled panel and state behavior. It does not demonstrate every component-case requirement in this version.
 
-If double-clicking does not run scripts, ask the agent to serve the folder locally and verify its address. Do not infer a working preview from the HTML source alone.
+If double-clicking does not run scripts, ask the agent to serve the folder locally and verify its address. HTML source alone does not prove the preview works.
 
 ## Share a selection
 
-Send the lab folder and saved JSON together. The folder contains the page, runtime, fixture manifest, and README. The recipient opens that lab and uses Load saved. A local address or JSON file alone is insufficient.
+Send the lab folder and saved JSON together. Include page, runtime, fixture manifest, and README. The recipient opens the lab and uses Load saved. A local address or JSON alone is insufficient.
 
-The agent validates the lab ID and values, reads the note, restores the declared state, and continues in the same lab. Keep the README as the review history.
+The agent validates lab ID and values, reads the note, restores state, and continues in the same lab. Keep review history in the README.
 
 ## What is included
 
@@ -67,9 +67,9 @@ Interactive labs must reuse the bundled panel and keep product styles separate f
 
 ## Capability boundaries
 
-The runtime provides a floating panel, basic controls, presets, Light/Dark tools, and selection save/load. The agent must build and verify component cases, control bindings, stricter domain validation, visible help, and responsive adapters when required. The runtime does not automatically measure pixel fidelity or serialize arbitrary application objects.
+The runtime provides a floating panel, basic controls, presets, Light/Dark tools, and selection save/load. The agent must build and verify required component cases, bindings, stricter validation, visible help, and responsive adapters. The runtime cannot automatically measure pixel fidelity or serialize arbitrary application objects.
 
-Test the runtime and panel checker with `node --test variant-lab/assets/variant-lab-export.test.cjs variant-lab/scripts/check-panel.test.mjs`. Browser checks are in `variant-lab/assets/selftest.html`; serve the folder if local reads are blocked. Test both tool themes. A passing state test does not verify visual fidelity or all device conditions.
+Run `node --test variant-lab/assets/variant-lab-export.test.cjs variant-lab/scripts/check-panel.test.mjs`. Run browser checks in `variant-lab/assets/selftest.html`; serve the folder if local reads are blocked. Test both tool themes. State tests do not prove fidelity or all device conditions.
 
 ## Maintainer and license
 

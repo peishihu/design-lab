@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.4 (2026-11-17)
+
+- Shorten both skills and their guides with ASD-STE100 writing principles. Preserve workflow behavior, constraints, thresholds, API examples, recovery paths, and required references.
+- Keep runtime code and selection schema unchanged. Review every original instruction against its new location.
+- Align the old verification guide with the approved Node.js 20+ requirement (verified on 20.20.2).
+
 ## 1.5.3 (2026-11-17)
 
 - Require the Variant Lab route before interactive-panel work, including repairs. Preserve product/tool style ownership.

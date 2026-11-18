@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0 (2026-11-17)
+
+- Add short skill entries and an optional task-based section reader. Read relevant guidance instead of both full manuals for each adjustment.
+- Preserve complete behavior rules in linked manuals. Keep panel integration, privacy, authority and verification gates mandatory. Unknown reader tasks, targets or missing sections fail.
+- Keep runtime code, APIs and schema 1 unchanged. Manual panel adjustments do not call a model; AI setup and application still consume tokens.
+- Report static reading-size comparisons separately from actual model usage or costs. Full builds can require all guidance.
+
 ## 1.5.4 (2026-11-17)
 
 - Shorten both skills and their guides with ASD-STE100 writing principles. Preserve workflow behavior, constraints, thresholds, API examples, recovery paths, and required references.

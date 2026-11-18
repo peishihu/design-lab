@@ -1,0 +1,6 @@
+{
+  "entry": "example.html",
+  "binding": "example.html",
+  "runtimeDir": ".",
+  "adapters": []
+}

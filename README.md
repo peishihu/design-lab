@@ -4,12 +4,14 @@ Inspect and adjust an AI draft. Compare named directions on a live component or 
 
 The first draft is a starting point, not a measured quality score. Precise matching requires a reference, known conditions, and rendered checks.
 
+[Download the 1.6.0 beta pack](https://github.com/peishihu/design-lab/releases/download/v1.6.0-beta/design-lab-1.6.0-beta.zip) or browse [all releases](https://github.com/peishihu/design-lab/releases).
+
 ## Requirements
 
 - An AI agent that can read and write local files.
 - A browser that can run local HTML and JavaScript.
 - A local server when the browser blocks local scripts or reads.
-- Node.js 20 or newer for optional command-line tests. The tests were verified with Node 20.20.2. The browser demo does not require Node.
+- Node.js 20 or newer for optional command-line tests and the section reader. The tests were verified with Node 20.20.2. The browser demo does not require Node.
 
 A regular web chat without file access cannot install or operate this pack. Windows and independent first-user setup remain unverified.
 
@@ -27,6 +29,20 @@ Without a skill mechanism, ask the agent to read `design-lab/SKILL.md` for each 
 
 The agent identifies relevant properties, controls, fixtures, and open decisions. It should not expose all CSS properties or invent exact measurements.
 
+## Read less during small adjustments
+
+Ask the agent to select a task from `design-lab/SKILL.md`. It can use the optional Node.js section reader:
+
+```sh
+node design-lab/scripts/read-guide.mjs --task adjust --target component
+```
+
+Use `--target page` for pages. Add `--system` for project tokens, selected parts, exceptions or uncertain domains. Add `--reference` for matching. New controls use `--task controls`; new labs use `--task build`. Without Node, the agent reads the same listed sections manually.
+
+The reader always includes shared rules, panel integration and verification. Complete manuals remain in the pack. This reduces instruction input for routine adjustments; it does not promise a fixed token bill. Full builds can need all guides.
+
+After the agent builds a lab, moving its controls in the browser makes no model calls. Adjust locally, save the selection once, then return that JSON for the next AI round. AI setup, code changes and applying a selection still consume model tokens.
+
 ## Review
 
 1. Open the preview and its floating gear icon.
@@ -43,7 +59,7 @@ Hold B or the Hold button to compare with baseline. Use Load saved to restore a 
 
 ## Open the example
 
-Open `variant-lab/assets/example.html` for bundled panel and state behavior. It does not demonstrate every component-case requirement in this version.
+Open `variant-lab/assets/example.html` for bundled panel and state behavior. Check its source integration with `node variant-lab/scripts/check-panel.mjs variant-lab/assets/panel-contract.json`. It does not demonstrate every component-case requirement in this version.
 
 If double-clicking does not run scripts, ask the agent to serve the folder locally and verify its address. HTML source alone does not prove the preview works.
 
@@ -69,7 +85,7 @@ Interactive labs must reuse the bundled panel and keep product styles separate f
 
 The runtime provides a floating panel, basic controls, presets, Light/Dark tools, and selection save/load. The agent must build and verify required component cases, bindings, stricter validation, visible help, and responsive adapters. The runtime cannot automatically measure pixel fidelity or serialize arbitrary application objects.
 
-Run `node --test variant-lab/assets/variant-lab-export.test.cjs variant-lab/scripts/check-panel.test.mjs`. Run browser checks in `variant-lab/assets/selftest.html`; serve the folder if local reads are blocked. Test both tool themes. State tests do not prove fidelity or all device conditions.
+Run `node --test design-lab/scripts/read-guide.test.mjs variant-lab/assets/variant-lab-export.test.cjs variant-lab/scripts/check-panel.test.mjs`. Run browser checks in `variant-lab/assets/selftest.html`; serve the folder if local reads are blocked. Test both tool themes. State tests do not prove fidelity or all device conditions.
 
 ## Maintainer and license
 
